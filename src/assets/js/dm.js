@@ -14,6 +14,7 @@ export default {
         android: isAndroid,
         win: isWin,
       },
+      ex: {},
       router: {},
       urlSearchData: {},
     }
