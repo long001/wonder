@@ -1,2 +1,3 @@
-# AppCrosser
-跨平台APP解决方案
+# web-platform
+
+web应用开发平台，默认集成 webFtp,xAdmin,appCrosser
