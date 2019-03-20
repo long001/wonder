@@ -10,5 +10,25 @@ export default {
       history[root.isRouterPush ? 'pushState' : 'replaceState']({}, '', targetUrl)
       root.isRouterPush = false
     }
+  },
+  'router.idxChannel'(newVal) {
+    this.$root.fetchVideoList()
+  },
+  'router.idxAlbum'(newVal) {
+    this.$root.fetchVideoList()
+  },
+  'router.searchText'(newVal) {
+    if (!newVal) return
+    this.$root.fetchVideoList()
+  },
+  'router.videoInfo.m3u8'(newVal) {
+    if (!newVal) return
+    this.$root.playM3u8()
+  },
+  'mapPlayTime': {
+    deep: true,
+    handler(newVal) {
+      localStorage.mapPlayTime = JSON.stringify(newVal)
+    }
   }
 }

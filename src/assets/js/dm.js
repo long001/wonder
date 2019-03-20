@@ -1,3 +1,5 @@
+import Hls from 'hls.js'
+
 export default {
   rootData() {
     const root = this.$root
@@ -13,9 +15,17 @@ export default {
         ios: isIos,
         android: isAndroid,
         win: isWin,
+        loading: true,
+        supportM3u8: !!document.createElement('video').canPlayType('application/vnd.apple.mpegurl'),
+        supportHls: Hls.isSupported(),
       },
+      localUrl: 'http://192.168.10.103/wonder/',
       ex: {},
-      router: {},
+      router: {
+        coms: [],
+        videoInfo: {},
+        searchText: '',
+      },
       urlSearchData: {},
     }
   },
@@ -40,21 +50,8 @@ export default {
     initEvents() {
       const root = this.$root
 
+      window.onresize = root.lazyLoad.bind(root)
       window.onpopstate = root.routerInit.bind(root)
-    },
-    routerInit() {
-      const root = this.$root
-      let r = {}
-
-      try {
-        r = JSON.parse(decodeURIComponent(location.hash.slice(1)))
-      } catch (e) {}
-
-      r.coms = r.coms || []
-      r.curPage = parseInt(r.curPage || 0)
-      r.pageSize = parseInt(r.pageSize || 100)
-      r.totalPage = parseInt(r.totalPage || 0)
-      root.router = r
     },
     init() {
       const root = this.$root

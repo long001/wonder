@@ -25,7 +25,6 @@ Date.prototype.format = function(format) {
 
   return (format || 'y-m-d h:i:s').replace(/y|m|d|h|i|s/g, (k) => {
     let str = o[k].toString()
-    str = str.length < 2 ? '0' + str : str
-    return str
+    return str.length < 2 ? '0' + str : str
   })
 }

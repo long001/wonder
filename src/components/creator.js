@@ -1,8 +1,9 @@
 const fs = require('fs')
 const coms = [
-  'cross',
-  'pc',
-  'mobile',
+  // 'cross',
+  // 'pc',
+  // 'mobile',
+  'cctv',
   'webFtp',
   'dbAdmin',
 ]
@@ -12,29 +13,43 @@ coms.forEach((dir) => {
 
   try {
     const info = fs.statSync(path)
-    console.log(info)
   } catch (e) {
     fs.mkdirSync(path)
   }
 
-//   fs.writeFileSync(path + '/index.vue', 
-// `<template>
-//   <div class="${dir}">
-//     ${dir}
-//   </div>
-// </template>
+  /*fs.writeFileSync(path + '/index.vue', 
+`<template>
+  <div class="${dir}">
+    ${dir}
+  </div>
+</template>
 
-// <script>
-// export default {
+<script>
+export default {
+  rootData() {
+    const root = this.$root
+    const r = root.router
+    
+    return {
 
-// }
-// </script>
+    }
+  },
+  rootMethods() {
+    const root = this.$root
+    const r = root.router
+    
+    return {
 
-// <style scoped lang="scss">
-// .${dir} {
+    }
+  },
+}
+</script>
+
+<style scoped lang="scss">
+.${dir} {
   
-// }
-// </style>
-// `
-// )
+}
+</style>
+`
+)*/
 })
