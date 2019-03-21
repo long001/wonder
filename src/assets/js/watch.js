@@ -21,6 +21,12 @@ export default {
     if (!newVal) return
     this.$root.fetchVideoList()
   },
+  'router.curPage'(newVal) {
+    this.$root.fetchVideoList()
+  },
+  'router.pageSize'(newVal) {
+    this.$root.fetchVideoList()
+  },
   'router.videoInfo.m3u8'(newVal) {
     if (!newVal) return
     this.$root.playM3u8()

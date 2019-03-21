@@ -91,17 +91,25 @@ export default {
 
       delete data['?']
 
-      window[fnName] = (data) => {
-        succ && succ(data)
+      window[fnName] = script.onerror = (data = {}) => {
+        document.body.removeChild(script)
         delete window[fnName]
-      }
-
-      script.onerror = () => {
-        delete window[fnName]
-        fail && fail()
+        const cb = data.type === 'error' ? fail : succ
+        cb && cb(data)
       }
 
       script.src = url + '?' + root.json2url(data)
+      document.body.appendChild(script)
+    },
+    loadScript(url, succ, error) {
+      const script = document.createElement('script')
+      script.src = url
+      script.onload = script.onerror = (e) => {
+        const cb = e.type === 'load' ? succ : error
+        e.type === 'error' && (root.is.loading = false)
+        cb && cb()
+        // document.body.removeChild(script)
+      }
       document.body.appendChild(script)
     },
   },
