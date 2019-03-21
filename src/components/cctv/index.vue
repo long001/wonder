@@ -514,8 +514,9 @@ window.getHtml5VideoData  = function(data) {
   }
   & > .box-channel,
   & > .box-album {
-    border-right: 1px solid #dddedf; background: #eee; white-space: nowrap;
-    // min-width: 184px;
+    background: #eee; white-space: nowrap;
+    border-right: 1px solid #fff;
+    border-left: 1px solid #dddedf;
     ul {
       padding-bottom: 100px;
       li {

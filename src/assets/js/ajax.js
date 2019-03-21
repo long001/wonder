@@ -37,7 +37,7 @@ export default {
       const data = o.data || {}
       let url = o.url
 
-      url = /^http/.test(url) ? url : (root.is.local ? root.localUrl + url.replace(/^\.\//, '') : '')
+      url = /^http/.test(url) ? url : (root.is.local ? root.localUrl + url.replace(/^\.\//, '') : url)
 
       function fail() {
         o.fail && o.fail(xhr)
