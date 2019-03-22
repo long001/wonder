@@ -25,8 +25,8 @@
         <div class="gray-title">
           <div class="fr btn-box">
             <span class="btn btn-primary btn-xs" onclick="location.reload()">刷新</span>
-            <span class="btn btn-primary btn-xs">央视直播</span>
-            <span class="btn btn-primary btn-xs">本站直播</span>
+            <!-- <span class="btn btn-primary btn-xs">央视直播</span>
+            <span class="btn btn-primary btn-xs">本站直播</span> -->
           </div>
           <div class="ellipsis" v-if="$root.router.isInSearch">{{'搜索结果：' + $root.router.searchText}}</div>
           <div class="ellipsis" v-else>{{curAlbum.name}}</div>
@@ -59,8 +59,15 @@
                 </div>
               </div>
             </div>
-            <div style="margin-left: 12px;">
-              <select style="min-width: 80px" 
+            <div style="margin-left: 4px;">
+              <select
+                :class="{select: !$root.is.ios}"
+                v-model="$root.router.playDir"
+              >
+                <option value="0">逆序播放</option>
+                <option value="1">顺序播放</option>
+              </select>
+              <select style="min-width: 72px;" 
                 :class="{select: !$root.is.ios}"
                 :disabled="$root.is.loading || $root.router.totalPage === 0"
                 :value="$root.router.curPage"
@@ -279,6 +286,33 @@ export default {
     },
   },
   rootMethods: {
+    playNext() {
+      const root = this.$root
+      const r = root.router
+      const cctv = root.cctv
+      let arr = []
+      let targetIdx = -1
+
+      cctv.listVideo.concat(cctv.searchResult).forEach((item) => {
+        arr = arr.concat(item.list)
+      })
+
+      arr.forEach((item, idx, arr) => {
+        if (item.id === r.videoInfo.id) {
+          targetIdx = idx
+        }
+      })
+
+      if (targetIdx === -1) {
+        console.log('not find')
+        return
+      }
+
+      r.playDir == '0' ? targetIdx-- : targetIdx++
+      if (targetIdx >= 0 && targetIdx < arr.length) {
+        root.clickAndFetchVideoUrl(arr[targetIdx])
+      }
+    },
     clearSugg() {
       const root = this.$root
       const sugg = root.cctv.sugg
@@ -296,10 +330,10 @@ export default {
       const sugg = cctv.sugg
       const searchText = r.searchText.trim()
 
-      console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
+      // console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
       clearTimeout(root.timerJustFetchAlbum)
       root.timerJustFetchAlbum = setTimeout(() => {
-        console.warn('%cjustFetchAlbum...', 'color: #0a0')
+        // console.warn('%cjustFetchAlbum...', 'color: #0a0')
 
         root.get('./api/pub.php', {
           a: 'get',
@@ -353,7 +387,7 @@ export default {
       const searchText = sugg.text.trim()
 
       if (!curAlbum) {
-        console.warn('%cfetchVideoList don\'t fetch', 'color: #a00')
+        // console.warn('%cfetchVideoList don\'t fetch', 'color: #a00')
         return
       }
 
@@ -363,7 +397,7 @@ export default {
       clearTimeout(root.timerFetchVideoList)
 
       root.timerFetchVideoList = setTimeout(async () => {
-        console.warn('%cfetchVideoList ...', 'color: #a00')
+        // console.warn('%cfetchVideoList ...', 'color: #a00')
 
         if (!r.isInSearch) {
           cctv.searchResult = []
@@ -466,7 +500,7 @@ export default {
                   :lazy-load="item.pic"
                   :title="item.desc"
                   :key="item.title"
-                  @click="clickAndFetchVideoUrl(item, idx, listData)"
+                  @click="clickAndFetchVideoUrl(item)"
                   tabindex="1"
                 >
                   <div class="text-box">
@@ -520,6 +554,12 @@ export default {
             root.loadScript(src)
           }
         },
+      },
+      mounted() {
+        const root = this.$root
+        const r = root.router
+        
+        root.clickAndFetchVideoUrl = this.clickAndFetchVideoUrl
       }
     }
   },
@@ -580,7 +620,7 @@ window.getHtml5VideoData  = function(data) {
     ul {
       padding-bottom: 100px;
       li {
-        height: 36px; overflow: hidden; cursor: pointer;
+        overflow: hidden; cursor: pointer;
       }
     }
   }
@@ -597,9 +637,11 @@ window.getHtml5VideoData  = function(data) {
         }
       }
       .list-video-wrapper {
-        section {
-          .section-title {
-            margin: 20px 0 12px 0;
+        div {
+          section {
+            .section-title {
+              margin: 20px 0 12px 0;
+            }
           }
         }
         .list-video {
@@ -610,7 +652,6 @@ window.getHtml5VideoData  = function(data) {
               padding-top: 62.5%; cursor: pointer; overflow: hidden;
               background: #eee no-repeat center / cover;
               .text-box {
-                font-size: 12px;
                 width: 100%; position: absolute; left: 0; bottom: 0; color: #fff; background: rgba(0,0,0,.5); padding: 8px;
                 .title {margin-bottom: 5px;}
               }
@@ -637,7 +678,24 @@ window.getHtml5VideoData  = function(data) {
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 600px) {
+  .cctv {
+    & > .box-main {
+      .box-back {
+        .panel-sugg {
+          min-width: calc(100vw - 24px);
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 850px) {
+  .cctv {
+    font-size: 12px;
+  }
+}
+@media (max-width: 550px) {
   .cctv {
     flex-direction: column;
     & > .box-channel,
@@ -664,4 +722,5 @@ window.getHtml5VideoData  = function(data) {
   }
 }
 
+#boxVideoListAutoScroll > div:first-child .section-title {margin-top: 5px !important;}
 </style>

@@ -32,6 +32,7 @@ export default {
           {name: 'WebFTP', com: 'webFTP'},
           {name: 'DBAdmin', com: 'dbAdmin'},
           {name: 'TinyBug', com: 'tinyBug'},
+          {name: 'Talker', com: 'talker'},
         ]
       }
     }
@@ -49,7 +50,7 @@ export default {
 
 <style scoped lang="scss">
 .topbar {
-  background: #33373e; color: #fff; line-height: 1.5em;
+  background: #33373e; color: #fff; line-height: 3em;
   .box-logo {
     font-size: 16px; font-weight: bold; margin-right: 15px;
   }
@@ -61,7 +62,7 @@ export default {
       }
     }
   }
-  a {display: block; padding: 12px 12px;}
+  a {display: block; padding: 0 12px;}
 }
 
 </style>

@@ -12,6 +12,7 @@ Vue.component('player', {
         x5-playsinline=""
         x-webkit-airplay="allow"
         @timeupdate="handleTimeupdate"
+        @ended="$root.playNext()"
       ></video>
     </div>
   `,

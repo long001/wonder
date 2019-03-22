@@ -11,6 +11,7 @@ export default {
       r.coms = r.coms || []
       r.coms.length === 0 && r.coms.push('cctv')
       r.idxChannel = parseInt(r.idxChannel || 0)
+      r.playDir = parseInt(r.playDir || '0')
       r.idxAlbum = parseInt(r.idxAlbum || 0)
       r.searchText = r.searchText || ''
       r.videoInfo = r.videoInfo || {}

@@ -12,12 +12,15 @@ export default {
     }
   },
   'router.idxChannel'(newVal) {
+    console.warn('%c router.idxChannel', 'color: #09f')
     this.$root.fetchVideoList()
   },
   'router.idxAlbum'(newVal) {
+    console.warn('%c router.idxAlbum', 'color: #09f')
     this.$root.fetchVideoList()
   },
   'router.searchText'(newVal) {
+    console.warn('%c router.searchText', 'color: #09f')
     const root = this.$root
     const r = root.router
 
@@ -30,12 +33,15 @@ export default {
     }
   },
   'router.curPage'(newVal) {
+    console.warn('%c router.curPage', 'color: #09f')
     this.$root.fetchVideoList()
   },
   'router.pageSize'(newVal) {
+    console.warn('%c router.pageSize', 'color: #09f')
     this.$root.fetchVideoList()
   },
   'router.videoInfo.m3u8'(newVal) {
+    console.warn('%c router.videoInfo.m3u8', 'color: #09f')
     if (!newVal) return
     this.$root.playM3u8()
   },
