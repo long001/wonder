@@ -1,5 +1,7 @@
 <template>
-  <div id="app">
+  <div id="app"
+    @click="handleClickPanel"
+  >
     <div class="flex-layout">
       <topbar></topbar>
       <div class="main-container">
@@ -40,6 +42,12 @@ export default {
         })
         return map
       })()
+    }
+  },
+  methods: {
+    handleClickPanel(e) {
+      const root = this.$root
+      root.clearSugg()
     }
   },
   rootMethods: {

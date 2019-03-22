@@ -18,8 +18,16 @@ export default {
     this.$root.fetchVideoList()
   },
   'router.searchText'(newVal) {
-    if (!newVal) return
-    this.$root.fetchVideoList()
+    const root = this.$root
+    const r = root.router
+
+    root.cctv.sugg.text = r.searchText
+    root.clearSugg()
+    
+    if (newVal) {
+      root.justFetchAlbum()
+      root.fetchVideoList()
+    }
   },
   'router.curPage'(newVal) {
     this.$root.fetchVideoList()

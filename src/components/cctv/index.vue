@@ -1,5 +1,5 @@
 <template>
-  <div class="cctv flex-layout flex-row">
+  <div class="cctv flex-layout">
     <div class="box-list box-channel">
       <ul>
         <li
@@ -40,7 +40,7 @@
                     v-model="sugg.text"
                     @keydown="handleKeydownAndControlSearch($event)"
                     @input="fetchSugg()"
-                    @click="fetchSugg(0)"
+                    @click.stop="fetchSugg(0)"
                   >
                   <div class="panel-sugg" v-if="sugg.list.length > 0 && sugg.text.trim()">
                     <ul>
@@ -79,36 +79,8 @@
             id="boxVideoListAutoScroll" 
             @scroll="$root.lazyLoad()"
           >
-            <section
-              v-for="(item, idx) in cctv.listVideo"
-            >
-              <div class="section-title" 
-                v-if="item.title"
-              >
-                <strong>{{item.title}}</strong>
-              </div>
-              <ul class="list-video">
-                <li v-for="(item, idx) in item.list">
-                  <div class="inner"
-                    :style="{backgroundImage: 'url(./static/img/img-blank.png)'}"
-                    :lazy-load="item.pic"
-                    :title="item.desc"
-                    :key="item.title"
-                    @click="clickAndFetchVideoUrl(item, idx, cctv.listVideo)"
-                    tabindex="1"
-                  >
-                    <div class="text-box">
-                      <div class="title line-2"
-                        v-if="item.title"
-                      >{{item.title}}</div>
-                      <div class="desc line-2"
-                        v-if="item.desc"
-                      >{{item.desc.length > 40 ? item.desc.slice(0, 40) + '...' : item.desc}}</div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </section>
+            <section-parts :list-data="cctv.listVideo"></section-parts>
+            <section-parts :list-data="cctv.searchResult"></section-parts>
           </div>
 
           <loading :is-show="$root.is.loading"></loading>
@@ -157,6 +129,7 @@ export default {
           list: []
         },
         listVideo: [],
+        searchResult: [],
         sugg: {
           cur: -1,
           oldText: '',
@@ -233,26 +206,6 @@ export default {
       }, 'push')
       root.fetchVideoList()
     },
-    clickAndFetchVideoUrl(elItem) {
-      const root = this.$root
-      const r = root.router
-
-      elItem = root.clone(elItem)
-      elItem.title = elItem.title || elItem.desc
-      delete elItem.desc
-
-      root.updateRouter({
-        videoInfo: elItem
-      }, 'push')
-
-      if (elItem.id) {
-        const script = document.createElement('script')
-        script.src = 'http://vdn.apps.cntv.cn/api/getIpadVideoInfo.do?pid=' + elItem.id + '&tai=ipad&from=html5&tsp=1553074558&vn=2049&vc=8AB31F7208274D1C0FD8874764B5EBE3&uid=2C5D032B73247D87E67C414F62BA2E7B&wlan='
-        document.body.appendChild(script)
-      } else {
-        console.log('no elItem.id', elItem)
-      }
-    },
     clickAndPlayInCCTV() {
       const root = this.$root
       const r = root.router
@@ -265,12 +218,15 @@ export default {
       const sugg = this.sugg
       const searchText = sugg.text.trim()
 
+      if (!searchText) return
+
       sugg.oldText = sugg.text
       clearTimeout(root.timerFetchSugg)
       root.timerFetchSugg = setTimeout(() => {
         root.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
           const data = window.suggestJSON || []
           root.cctv.sugg.list = data.map(v => v.name)
+          sugg.cur = sugg.list.length
         })
       }, iTimeout === undefined ? 200 : iTimeout)
     },
@@ -302,23 +258,93 @@ export default {
       const root = this.$root
       const r = root.router
       const sugg = this.sugg
+      const isPush = sugg.text.trim() !== r.searchText.trim()
+      let isInSearch
       let searchText = ''
 
       sugg.text = sugg.list[sugg.cur] || sugg.oldText
       searchText = sugg.text.trim()
+      isInSearch = !!searchText
 
       root.updateRouter({
-        isInSearch: !!searchText,
+        isInSearch: isInSearch,
         searchText,
         videoInfo: {},
         curPage: 0,
         totalPage: 0,
-      }, 'push')
+      }, isPush)
+
+      isInSearch && root.justFetchAlbum()
       root.fetchVideoList()
     },
   },
   rootMethods: {
-    fetchVideoList() {
+    clearSugg() {
+      const root = this.$root
+      const sugg = root.cctv.sugg
+      
+      clearTimeout(root.timerFetchSugg)
+      setTimeout(() => {
+        sugg.cur = -1
+        sugg.list = []
+      }, 1)
+    },
+    justFetchAlbum() {
+      const root = this.$root
+      const r = root.router
+      const cctv = root.cctv
+      const sugg = cctv.sugg
+      const searchText = r.searchText.trim()
+
+      console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
+      clearTimeout(root.timerJustFetchAlbum)
+      root.timerJustFetchAlbum = setTimeout(() => {
+        console.warn('%cjustFetchAlbum...', 'color: #0a0')
+
+        root.get('./api/pub.php', {
+          a: 'get',
+          url: 'https://search.cctv.com/search.php?qtext=' + encodeURIComponent(searchText) + '&type=video'
+        }, async (sHtml) => {
+          const urls = sHtml.match(/https:\/\/r\.img\.cctvpic\.com\/so\/cctv\/list[^"]*/g) || []
+
+          root.cctv.searchResult = []
+          root.is.loading = false
+
+          for (let i = 0; i < urls.length; i++) {
+            await new Promise((succ) => {
+              const src = urls[i]
+              window.playlistArray = {}
+              root.loadScript(src, () => {
+                Object.keys(playlistArray).forEach((k) => {
+                  const data = playlistArray[k]
+                  let list = data.video.recent
+
+                  list = list || data.video
+                  cctv.searchResult.push({
+                    title: decodeURIComponent(data.playlist.title),
+                    list: list.map((item) => {
+                      item.title = decodeURIComponent(item.title)
+                      return {
+                        id: item.detailsid,
+                        pic: item.imagelink,
+                        title: '',
+                        desc: item.title,
+                        site: item.targetpage,
+                      }
+                    })
+                  })
+                })
+                succ()
+              })
+            })
+          }
+
+          root.is.loading = false
+          root.lazyLoad()
+        }, 10)
+      })
+    },
+    fetchVideoList(cb) {
       const root = this.$root
       const r = root.router
       const curAlbum = ((root.cctv.channel.list[r.idxChannel] || {}).children || [])[r.idxAlbum]
@@ -327,27 +353,26 @@ export default {
       const searchText = sugg.text.trim()
 
       if (!curAlbum) {
-        // console.warn('%cfetchVideoList don\'t fetch', 'color: #a00')
+        console.warn('%cfetchVideoList don\'t fetch', 'color: #a00')
         return
-      } else {
-        // console.warn('%cfetchVideoList ...', 'color: #a00')
       }
 
+      r.pageSize = r.isInSearch ? 20 : 100
       root.is.loading = true
-      root.cctv.sugg.cur = -1
-      root.cctv.sugg.list = []
-
-      clearTimeout(root.timerFetchSugg)
+      root.clearSugg()
       clearTimeout(root.timerFetchVideoList)
 
       root.timerFetchVideoList = setTimeout(async () => {
-        if (r.isInSearch) {
-          fetchVideoListBySearch()
+        console.warn('%cfetchVideoList ...', 'color: #a00')
+
+        if (!r.isInSearch) {
+          cctv.searchResult = []
+          fetchByDefault()
         } else {
-          fetchVideoListByDefault()
+          fetchBySearch()
         }
 
-        function fetchVideoListByDefault() {
+        function fetchByDefault() {
           root.jsonp('http://api.cntv.cn/lanmu/videolistByColumnId', {
             'id': curAlbum.id,
             'n': 100,
@@ -361,7 +386,6 @@ export default {
             const data = dataOrigin.response.docs || []
 
             root.is.loading = false
-            r.pageSize = 100
             cctv.listVideo = [{
               name: '',
               list: data.map((v) => {
@@ -377,30 +401,24 @@ export default {
 
             root.lazyLoad()
             r.totalPage = dataOrigin.response.numFound || 0
-
-            const boxVideoListAutoScroll = document.getElementById('boxVideoListAutoScroll')
-            boxVideoListAutoScroll.scrollTop = 0
-          }, () => {
-            console.warn('error')
+            cb && cb()
+            document.getElementById('boxVideoListAutoScroll').scrollTop = 0
           })
         }
 
-        async function fetchVideoListBySearch() {
-          cctv.listVideo = []
-
+        async function fetchBySearch() {
           await new Promise((succ) => {
             root.get('./api/pub.php', {
               a: 'get',
               url: 'https://search.cctv.com/ifsearch.php?page=' + r.curPage + '&qtext=' + searchText + '&sort=relevance&pageSize=20&type=video&vtime=-1&datepid=1&channel=&pageflag=1&qtext_str=' + searchText,
             }, (data) => {
-              r.pageSize = 20
               r.totalPage = data.total
               const list = data.list.map((item) => {
                 item.title = decodeURIComponent(item.all_title)
                 const rangeL = item.imglink.lastIndexOf('/') + 1
                 const rangeR = item.imglink.search(/-\d+/)
+                
                 item.id = rangeR > -1 ? item.imglink.slice(rangeL, rangeR) : ''
-                console.log(item.id)
 
                 return {
                   id: item.id,
@@ -410,58 +428,99 @@ export default {
                   site: item.urllink,
                 }
               })
-              cctv.listVideo.push({
+
+              cctv.listVideo = [{
                 title: '全部视频结果共' + r.totalPage + '条',
                 list,
-              })
+              }]
 
+              root.is.loading = false
               root.lazyLoad()
               succ()
             })
+
+            cb && cb()
           })
+          
+          document.getElementById('boxVideoListAutoScroll').scrollTop = 0
+        }
+      }, 10)
+    }
+  },
+  components: {
+    'section-parts': {
+      template: `
+        <div>
+          <section
+            v-for="(item, idx) in listData"
+          >
+            <div class="section-title"
+              v-if="item.title"
+            >
+              <strong>{{item.title}}</strong>
+            </div>
+            <ul class="list-video">
+              <li v-for="(item, idx) in item.list">
+                <div class="inner"
+                  :style="{backgroundImage: 'url(./static/img/img-blank.png)'}"
+                  :lazy-load="item.pic"
+                  :title="item.desc"
+                  :key="item.title"
+                  @click="clickAndFetchVideoUrl(item, idx, listData)"
+                  tabindex="1"
+                >
+                  <div class="text-box">
+                    <div class="title line-2"
+                      v-if="item.title"
+                    >{{item.title}}</div>
+                    <div class="desc line-2"
+                      v-if="item.desc"
+                    >{{item.desc.length > 40 ? item.desc.slice(0, 40) + '...' : item.desc}}</div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </div>
+      `,
+      props: ['listData'],
+      methods: {
+        clickAndFetchVideoUrl(elItem) {
+          const root = this.$root
+          const r = root.router
 
-          // album
-          root.get('./api/pub.php', {
-            a: 'get',
-            url: 'https://search.cctv.com/search.php?qtext=' + encodeURIComponent(searchText) + '&type=video'
-          }, async (sHtml) => {
-            root.is.loading = false
-            const urls = sHtml.match(/https:\/\/r\.img\.cctvpic\.com\/so\/cctv\/list[^"]*/g) || []
+          elItem = root.clone(elItem)
+          elItem.title = elItem.title || elItem.desc
+          delete elItem.desc
 
-            for (let i = 0; i < urls.length; i++) {
-              const src = urls[i]
+          root.updateRouter({
+            videoInfo: elItem
+          }, 'push')
 
-              await new Promise((succ) => {
-                window.playlistArray = {}
-                root.loadScript(src, () => {
-                  Object.keys(playlistArray).forEach((k) => {
-                    const data = playlistArray[k]
-                    let list = data.video.recent
+          if (elItem.id) {
+            loadScript()
+          } else {
+            root.get('./api/pub.php', {
+              a: 'get',
+              url: elItem.site
+            }, (sHtml) => {
+              r.videoInfo.id = elItem.id = (sHtml.match(/"videoCenterId","([^"]*)"/m) || [])[1] || ''
+              loadScript()
+            })
+          }
 
-                    list = list || data.video
-                    cctv.listVideo.push({
-                      title: decodeURIComponent(data.playlist.title),
-                      list: list.map((item) => {
-                        item.title = decodeURIComponent(item.title)
-                        return {
-                          id: item.detailsid,
-                          pic: item.imagelink,
-                          title: '',
-                          desc: item.title,
-                          site: item.targetpage,
-                        }
-                      })
-                    })
-                  })
-                  succ()
-                })
-              })
+          function loadScript() {
+            if (!elItem.id) {
+              alert('无法播放当前视频，点击确定进入央视播放')
+              location.href = elItem.site
+              return
             }
 
-            root.lazyLoad()
-          })
-        }
-      }, 240)
+            const src = 'http://vdn.apps.cntv.cn/api/getIpadVideoInfo.do?pid=' + elItem.id + '&tai=ipad&from=html5&tsp=1553074558&vn=2049&vc=8AB31F7208274D1C0FD8874764B5EBE3&uid=2C5D032B73247D87E67C414F62BA2E7B&wlan='
+            root.loadScript(src)
+          }
+        },
+      }
     }
   },
   mounted() {
@@ -476,6 +535,7 @@ export default {
       root.fetchVideoList()
     })
 
+    r.isInSearch && root.justFetchAlbum()
     this.sugg.text = r.searchText
   },
 }
@@ -506,17 +566,17 @@ window.getHtml5VideoData  = function(data) {
 
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .cctv {
-  display: flex;
+  flex-direction: row;
   & > div {
     overflow: auto;
   }
   & > .box-channel,
   & > .box-album {
     background: #eee; white-space: nowrap;
-    border-right: 1px solid #fff;
-    border-left: 1px solid #dddedf;
+    border-left: 1px solid #fff;
+    border-right: 1px solid #dddedf;
     ul {
       padding-bottom: 100px;
       li {
@@ -530,16 +590,16 @@ window.getHtml5VideoData  = function(data) {
       width: 100%; height: 100%; position: absolute; left: 0; top: 0; z-index: 1;
     }
     .box-back {
-      form {padding: 10px 12px;}
+      form {
+        padding: 10px 12px;
+        .form-control {
+          border-radius: 4px 0 0 4px;
+        }
+      }
       .list-video-wrapper {
         section {
           .section-title {
             margin: 20px 0 12px 0;
-          }
-          &:first-child {
-            .section-title {
-              margin-top: 5px;
-            }
           }
         }
         .list-video {
@@ -603,36 +663,5 @@ window.getHtml5VideoData  = function(data) {
     }
   }
 }
-
-
-/* .box-back {
-  form {padding: 10px 12px;}
-  .list-video-wrapper {
-    section {
-      .section-title {
-        margin: 20px 0 12px 0;
-      }
-      &:first-child {
-        .section-title {
-          margin-top: 5px;
-        }
-      }
-    }
-    .list-video {
-      margin: -2px;
-      li {
-        display: inline-block; padding: 2px; vertical-align: top;
-        & > .inner {
-          padding-top: 62.5%; cursor: pointer; overflow: hidden;
-          background: #eee no-repeat center / cover;
-          .text-box {
-            font-size: 12px;
-            width: 100%; position: absolute; left: 0; bottom: 0; color: #fff; background: rgba(0,0,0,.5); padding: 8px;
-            .title {margin-bottom: 5px;}
-          }
-        }
-      }
-    }
-  } */
 
 </style>

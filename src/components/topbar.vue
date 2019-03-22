@@ -1,9 +1,12 @@
 <template>
-  <div class="topbar">
+  <div class="topbar lmr">
     <div class="fl box-logo hidden-xs">
       <a href="javascript:">Codding.cn</a>
     </div>
-    <div class="nav fl">
+    <div class="fr">
+      <a href="javascript:">后台管理</a>
+    </div>
+    <div class="mid nav ellipsis">
       <ul class="list-unstyled">
         <li
           v-for="(item, idx) in $root.nav.list"
@@ -12,9 +15,6 @@
           <a href="javascript:">{{item.name}}</a>
         </li>
       </ul>
-    </div>
-    <div class="fr">
-      <a href="javascript:">后台管理</a>
     </div>
   </div>
 </template>
