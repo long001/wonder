@@ -16,7 +16,7 @@ export default {
       r.searchText = r.searchText || ''
       r.videoInfo = r.videoInfo || {}
       r.videoInfo.id = r.videoInfo.id || r.videoId
-      r.videoInfo.title = r.videoInfo.title || r.videoTitle
+      r.videoInfo.title = r.videoInfo.title || r.videoTitle || ''
       r.videoInfo.m3u8 = r.videoInfo.m3u8 || r.m3u8 || ''
       r.videoInfo.site = r.videoInfo.site || r.site || ''
       if (typeof r.page === 'object') {

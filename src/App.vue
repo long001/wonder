@@ -1,7 +1,5 @@
 <template>
-  <div id="app"
-    @click="handleClickPanel"
-  >
+  <div id="app" @click="$root.clearSugg">
     <div class="flex-layout">
       <topbar></topbar>
       <div class="main-container">
@@ -42,12 +40,6 @@ export default {
         })
         return map
       })()
-    }
-  },
-  methods: {
-    handleClickPanel(e) {
-      const vm = this.$root
-      vm.clearSugg()
     }
   },
   vmMethods: {

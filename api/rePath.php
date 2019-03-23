@@ -1,3 +1,3 @@
 <?php 
-require './utils/safe.php';
+require './utils/common.php';
 

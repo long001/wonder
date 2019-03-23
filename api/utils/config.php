@@ -2,7 +2,7 @@
 error_reporting(1);
 header('Content-Type: text/html; Charset=utf-8');
 
-if (preg_match('/808/', 'http://localhost:8080/')) {
+if (preg_match('/808/', $_SERVER['SERVER_NAME'])) {
   header('Access-Control-Allow-Origin: *');
 }
 

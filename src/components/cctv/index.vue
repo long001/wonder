@@ -28,32 +28,34 @@
             <!-- <span class="btn btn-primary btn-xs">央视直播</span>
             <span class="btn btn-primary btn-xs">本站直播</span> -->
           </div>
-          <div class="ellipsis" v-if="r.isInSearch">{{'搜索结果：' + r.searchText}}</div>
+          <div class="ellipsis" v-if="$root.isInSearch">{{'搜索结果：' + r.searchText + ' (' + r.totalPage + ')'}}</div>
           <div class="ellipsis" v-else>{{curAlbum.name + ' (' + r.totalPage + ')'}}</div>
         </div>
-        <form @submit.prevent="handleClickAndChooseSugg()">
+        <form
+          @submit.prevent="chooseSugg"
+        >
           <div class="flex-layout flex-row">
             <div class="auto-flex" style="overflow: visible;">
               <div class="input-group">
                 <div class="inner">
                   <input type="text" class="form-control" placeholder="搜点什么..."
                     v-model="sugg.text"
-                    @keydown="handleKeydownAndControlSearch($event)"
+                    @keydown="handleKeydownAndControlSugg"
                     @input="fetchSugg()"
-                    @click.stop="fetchSugg(0)"
+                    @click.stop="fetchSugg(1)"
                   >
                   <div class="panel-sugg" v-if="sugg.list.length > 0 && sugg.text.trim()">
                     <ul>
                       <li tabindex="1" 
                         v-for="(item, idx) in sugg.list"
                         :class="['ellipsis', {on: idx === sugg.cur}]"
-                        @click="sugg.cur = idx; handleClickAndChooseSugg()"
+                        @click="sugg.cur = idx; chooseSugg()"
                       >{{item}}</li>
                     </ul>
                   </div>
                 </div>
                 <div class="input-group-btn">
-                  <button class="btn btn-success" type="submit">
+                  <button class="btn btn-success" type="submit" @click.stop>
                     <i class="glyphicon glyphicon-search"></i>
                   </button>
                 </div>
@@ -177,15 +179,60 @@ export default {
     },
   },
   methods: {
+    handleKeydownAndControlSugg(e) {
+      const vm = this.$root
+      const r = vm.router
+      const sugg = vm.cctv.sugg
+      const sKey = vm.keyMap[e.keyCode]
+      
+      switch (sKey) {
+        case 'up':
+        case 'down':
+          e.preventDefault()
+          const len = sugg.list.length + 1
+          let cur = sugg.cur
+          sKey === 'up' ? cur-- : cur++
+          cur = (cur % len + len) % len
+          sugg.cur = cur
+          break
+      }
+    },
+    chooseSugg() {
+      const vm = this.$root
+      const r = vm.router
+      const cctv = vm.cctv
+      const sugg = cctv.sugg
+      let searchText = sugg.list[sugg.cur] || sugg.text
+      
+      vm.updateRouter({
+        searchText
+      }, 'push')
+      vm.fetchVideoList()
+      vm.justFetchAlbum()
+    },
+    fetchSugg(iTimeout) {
+      const vm = this.$root
+      const r = vm.router
+      const sugg = vm.$root.cctv.sugg
+      const searchText = sugg.text.trim()
+
+      clearTimeout(vm.timerFetchSugg)
+      vm.timerFetchSugg = setTimeout(() => {
+        vm.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
+          const data = window.suggestJSON || []
+          sugg.list = data.map(v => v.name)
+          sugg.cur = sugg.list.length
+        })
+      }, iTimeout === undefined ? 10 : iTimeout)
+    },
     clickChannel(elItem, idx, arr) {
       const vm = this.$root
       const r = vm.router
       
-      vm.cctv.sugg.text = ''
       vm.updateRouter({
         idxChannel: idx,
         idxAlbum: 0,
-        isInSearch: false,
+        searchText: '',
         curPage: 0,
         totalPage: 0,
         videoInfo: {},
@@ -196,10 +243,9 @@ export default {
       const vm = this.$root
       const r = vm.router
       
-      vm.cctv.sugg.text = ''
       vm.updateRouter({
         idxAlbum: idx,
-        isInSearch: false,
+        searchText: '',
         curPage: 0,
         totalPage: 0,
         videoInfo: {},
@@ -212,24 +258,6 @@ export default {
       
       location.href = r.videoInfo.site
     },
-    fetchSugg(iTimeout) {
-      const vm = this.$root
-      const r = vm.router
-      const sugg = this.sugg
-      const searchText = sugg.text.trim()
-
-      if (!searchText) return
-
-      sugg.oldText = sugg.text
-      clearTimeout(vm.timerFetchSugg)
-      vm.timerFetchSugg = setTimeout(() => {
-        vm.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
-          const data = window.suggestJSON || []
-          vm.cctv.sugg.list = data.map(v => v.name)
-          sugg.cur = sugg.list.length
-        })
-      }, iTimeout === undefined ? 200 : iTimeout)
-    },
     handleChangeCurPage(e) {
       const vm = this.$root
       const r = vm.router
@@ -238,47 +266,17 @@ export default {
         curPage: parseInt(e.target.value)
       }, 'push')
     },
-    handleKeydownAndControlSearch(e) {
-      const vm = this.$root
-      const r = vm.router
-      const sugg = this.sugg
-      
-      switch (vm.keyMap[e.keyCode]) {
-        case 'up':
-        case 'down':
-          e.preventDefault()
-          e.keyCode === 38 ? sugg.cur-- : sugg.cur++
-          const len = sugg.list.length + 1
-          sugg.cur = (sugg.cur % len + len) % len
-          sugg.text = sugg.list[sugg.cur] || sugg.oldText
-          break
-      }
-    },
-    handleClickAndChooseSugg() {
-      const vm = this.$root
-      const r = vm.router
-      const sugg = this.sugg
-      const isPush = sugg.text.trim() !== r.searchText.trim()
-      let isInSearch
-      let searchText = ''
-
-      sugg.text = sugg.list[sugg.cur] || sugg.oldText
-      searchText = sugg.text.trim()
-      isInSearch = !!searchText
-
-      vm.updateRouter({
-        isInSearch: isInSearch,
-        searchText,
-        videoInfo: {},
-        curPage: 0,
-        totalPage: 0,
-      }, isPush)
-
-      isInSearch && vm.justFetchAlbum()
-      vm.fetchVideoList()
-    },
   },
   vmMethods: {
+    clearSugg() {
+      const vm = this.$root
+      const r = vm.router
+      const sugg = vm.cctv.sugg
+
+      sugg.cur = sugg.list.length
+      sugg.list = []
+      clearTimeout(vm.timerFetchSugg)
+    },
     playNext() {
       const vm = this.$root
       const r = vm.router
@@ -302,40 +300,28 @@ export default {
       }
 
       r.playDir == '0' ? targetIdx-- : targetIdx++
+
       if (targetIdx >= 0 && targetIdx < arr.length) {
         vm.clickAndFetchVideoUrl(arr[targetIdx])
       }
-    },
-    clearSugg() {
-      const vm = this.$root
-      const sugg = vm.cctv.sugg
-      
-      clearTimeout(vm.timerFetchSugg)
-      setTimeout(() => {
-        sugg.cur = -1
-        sugg.list = []
-      }, 1)
     },
     justFetchAlbum() {
       const vm = this.$root
       const r = vm.router
       const cctv = vm.cctv
-      const sugg = cctv.sugg
       const searchText = r.searchText.trim()
 
       // console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
+      cctv.listVideo = []
       clearTimeout(vm.timerJustFetchAlbum)
       vm.timerJustFetchAlbum = setTimeout(() => {
         // console.warn('%cjustFetchAlbum...', 'color: #0a0')
-
         vm.get('./api/pub.php', {
           a: 'get',
           url: 'https://search.cctv.com/search.php?qtext=' + encodeURIComponent(searchText) + '&type=video'
         }, async (sHtml) => {
           const urls = sHtml.match(/https:\/\/r\.img\.cctvpic\.com\/so\/cctv\/list[^"]*/g) || []
-
           vm.cctv.searchResult = []
-          vm.is.loading = false
 
           for (let i = 0; i < urls.length; i++) {
             await new Promise((succ) => {
@@ -376,15 +362,15 @@ export default {
       const r = vm.router
       const curAlbum = ((vm.cctv.channel.list[r.idxChannel] || {}).children || [])[r.idxAlbum]
       const cctv = vm.cctv
-      const sugg = cctv.sugg
-      const searchText = sugg.text.trim()
+      const searchText = r.searchText.trim()
 
       if (!curAlbum) {
         // console.warn('%cfetchVideoList don\'t fetch', 'color: #a00')
         return
       }
 
-      r.pageSize = r.isInSearch ? 20 : 100
+      r.pageSize = searchText ? 20 : 100
+      // cctv.listVideo = []
       vm.is.loading = true
       vm.clearSugg()
       clearTimeout(vm.timerFetchVideoList)
@@ -392,7 +378,7 @@ export default {
       vm.timerFetchVideoList = setTimeout(async () => {
         // console.warn('%cfetchVideoList ...', 'color: #a00')
 
-        if (!r.isInSearch) {
+        if (!searchText) {
           cctv.searchResult = []
           fetchByDefault()
         } else {
@@ -489,7 +475,7 @@ export default {
             <ul class="list-video">
               <li v-for="(item, idx) in item.list">
                 <div class="inner"
-                  :style="{backgroundImage: 'url(./static/img/img-blank.png)'}"
+                  :style="{backgroundImage: 'url(./static/img/img-blank.png?a)'}"
                   :lazy-load="item.pic"
                   :title="item.desc"
                   :key="item.title"
@@ -567,9 +553,6 @@ export default {
       vm.cctv.channel.list = data
       vm.fetchVideoList()
     })
-
-    r.isInSearch && vm.justFetchAlbum()
-    this.sugg.text = r.searchText
   },
 }
 
@@ -683,11 +666,6 @@ window.getHtml5VideoData  = function(data) {
   }
 }
 
-@media (max-width: 850px) {
-  .cctv {
-    font-size: 12px;
-  }
-}
 @media (max-width: 550px) {
   .cctv {
     flex-direction: column;

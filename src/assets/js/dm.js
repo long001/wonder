@@ -10,6 +10,8 @@ export default {
     const isWin = ua.indexOf('Windows NT') > -1
 
     return {
+      dw: window.innerWidth,
+      dh: window.innerHeight,
       is: {
         local: isLocal,
         ios: isIos,
@@ -61,7 +63,13 @@ export default {
     initEvents() {
       const vm = this.$root
 
-      window.onresize = vm.lazyLoad.bind(vm)
+      // window.addEventListner('orientationchange')
+      window.onresize = window.onorientationchange = (e) => {
+        alert(e.type)
+        vm.dw = window.innerWidth
+        vm.dh = window.innerHeight
+        vm.lazyLoad.call(vm)
+      }
       window.onpopstate = vm.routerInit.bind(vm)
     },
     init() {

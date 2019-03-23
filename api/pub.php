@@ -1,5 +1,5 @@
 <?php 
-require 'rePath.php';
+// require './utils/safe.php';
 
 switch ($_REQUEST['a']) {
   case 'get':

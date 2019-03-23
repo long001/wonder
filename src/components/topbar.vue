@@ -1,5 +1,5 @@
 <template>
-  <div class="topbar lmr">
+  <div class="topbar lmr" :style="{paddingTop: $root.topPt}">
     <div class="fl box-logo hidden-xs">
       <a href="javascript:">Codding.cn</a>
     </div>

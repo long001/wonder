@@ -1,7 +1,7 @@
 <?php 
-require 'config.php';
-require 'db.php';
-require 'fs.php';
+require './config.php';
+// require 'db.php';
+// require 'fs.php';
 
 function err($code, $msg) {
   echo json_encode([

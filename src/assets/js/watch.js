@@ -25,11 +25,10 @@ export default {
     const r = vm.router
 
     vm.cctv.sugg.text = r.searchText
-    vm.clearSugg()
     
     if (newVal) {
-      vm.justFetchAlbum()
       vm.fetchVideoList()
+      vm.justFetchAlbum()
     }
   },
   'router.curPage'(newVal) {
