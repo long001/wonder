@@ -9,5 +9,11 @@
   </head>
   <body>
     <div id="app"></div>
+
+    <script>
+      window.onerror = function() {
+        alert([].slice.call(arguments).join(' - '))
+      }
+    </script>
   </body>
 </html>

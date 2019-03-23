@@ -312,7 +312,6 @@ export default {
       const searchText = r.searchText.trim()
 
       // console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
-      cctv.listVideo = []
       clearTimeout(vm.timerJustFetchAlbum)
       vm.timerJustFetchAlbum = setTimeout(() => {
         // console.warn('%cjustFetchAlbum...', 'color: #0a0')
@@ -370,7 +369,6 @@ export default {
       }
 
       r.pageSize = searchText ? 20 : 100
-      // cctv.listVideo = []
       vm.is.loading = true
       vm.clearSugg()
       clearTimeout(vm.timerFetchVideoList)

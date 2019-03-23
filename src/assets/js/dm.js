@@ -65,7 +65,6 @@ export default {
 
       // window.addEventListner('orientationchange')
       window.onresize = window.onorientationchange = (e) => {
-        alert(e.type)
         vm.dw = window.innerWidth
         vm.dh = window.innerHeight
         vm.lazyLoad.call(vm)
