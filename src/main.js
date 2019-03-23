@@ -20,20 +20,20 @@ Vue.config.productionTip = false
 window.vm = new Vue({
   el: '#app',
   data() {
-    const root = this.$root
+    const vm = this.$root
 
     return {
-      ...dm.rootData.call(root),
-      ...App.rootData.call(root),
+      ...dm.vmData.call(vm),
+      ...App.vmData.call(vm),
     }
   },
   methods: {
-    ...dm.rootMethods,
-    ...ajax.rootMethods,
-    ...lazyLoad.rootMethods,
-    ...router.rootMethods,
-    ...player.rootMethods,
-    ...App.rootMethods,
+    ...dm.vmMethods,
+    ...ajax.vmMethods,
+    ...lazyLoad.vmMethods,
+    ...router.vmMethods,
+    ...player.vmMethods,
+    ...App.vmMethods,
   },
   watch: {
     ...watch,
@@ -44,8 +44,8 @@ window.vm = new Vue({
   components: { App },
   template: '<App/>',
   mounted() {
-    const root = this.$root
+    const vm = this.$root
 
-    root.init()
+    vm.init()
   }
 })

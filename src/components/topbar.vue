@@ -21,9 +21,9 @@
 
 <script>
 export default {
-  rootData() {
-    const root = this.$root
-    const r = root.router
+  vmData() {
+    const vm = this.$root
+    const r = vm.router
 
     return {
       nav: {
@@ -37,9 +37,9 @@ export default {
       }
     }
   },
-  rootMethods() {
-    const root = this.$root
-    const r = root.router
+  vmMethods() {
+    const vm = this.$root
+    const r = vm.router
     
     return {
 
@@ -52,7 +52,7 @@ export default {
 .topbar {
   background: #33373e; color: #fff; line-height: 3em;
   .box-logo {
-    font-size: 16px; font-weight: bold; margin-right: 15px;
+    font-size: 16px; font-weight: bold; margin-right: 0;
   }
   .nav {
     ul {

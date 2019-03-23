@@ -4,7 +4,7 @@
       <ul>
         <li
           v-for="(item, idx) in listChannel"
-          :class="['gray-title', {on: idx === $root.router.idxChannel}]"
+          :class="['gray-title', {on: idx === r.idxChannel}]"
           tabindex="1"
           @click="clickChannel(item, idx, listChannel)"
         >{{item.name + ' (' + item.children.length + ')'}}</li>
@@ -14,7 +14,7 @@
       <ul>
         <li
           v-for="(item, idx) in listAlbum"
-          :class="['gray-title', {on: idx === $root.router.idxAlbum}]"
+          :class="['gray-title', {on: idx === r.idxAlbum}]"
           tabindex="1"
           @click="clickAlbum(item, idx, listAlbum)"
         >{{item.name}}</li>
@@ -28,8 +28,8 @@
             <!-- <span class="btn btn-primary btn-xs">央视直播</span>
             <span class="btn btn-primary btn-xs">本站直播</span> -->
           </div>
-          <div class="ellipsis" v-if="$root.router.isInSearch">{{'搜索结果：' + $root.router.searchText}}</div>
-          <div class="ellipsis" v-else>{{curAlbum.name}}</div>
+          <div class="ellipsis" v-if="r.isInSearch">{{'搜索结果：' + r.searchText}}</div>
+          <div class="ellipsis" v-else>{{curAlbum.name + ' (' + r.totalPage + ')'}}</div>
         </div>
         <form @submit.prevent="handleClickAndChooseSugg()">
           <div class="flex-layout flex-row">
@@ -62,20 +62,20 @@
             <div style="margin-left: 4px;">
               <select
                 :class="{select: !$root.is.ios}"
-                v-model="$root.router.playDir"
+                v-model="r.playDir"
               >
                 <option value="0">逆序播放</option>
                 <option value="1">顺序播放</option>
               </select>
               <select style="min-width: 72px;" 
                 :class="{select: !$root.is.ios}"
-                :disabled="$root.is.loading || $root.router.totalPage === 0"
-                :value="$root.router.curPage"
+                :disabled="$root.is.loading || r.totalPage === 0"
+                :value="r.curPage"
                 @change="handleChangeCurPage"
               >
                 <option
                   :value="n - 1"
-                  v-for="n in Math.ceil($root.router.totalPage / $root.router.pageSize)"
+                  v-for="n in Math.ceil(r.totalPage / r.pageSize)"
                 >{{'第' + n + '页'}}</option>
               </select>
             </div>
@@ -94,7 +94,7 @@
         </div>
       </div>
       <div class="box-player flex-layout"
-        v-if="$root.router.videoInfo.m3u8"
+        v-if="r.videoInfo.m3u8"
       >
         <div class="gray-title">
           <div class="btn-box fr">
@@ -107,7 +107,7 @@
           </div>
           <div class="ellipsis">
             <span class="hidden-sm hidden-xs">正在播放：</span>
-            <span>{{$root.router.videoInfo.title}}</span>
+            <span>{{r.videoInfo.title}}</span>
           </div>
         </div>
         <div class="auto-flex">
@@ -120,9 +120,7 @@
 
 <script>
 export default {
-  rootData() {
-    const root = this.$root
-    const r = root.router
+  vmData() {
     let mapPlayTime = {}
 
     try {
@@ -147,23 +145,21 @@ export default {
     }
   },
   computed: {
+    r() {
+      return this.$root.router
+    },
     cctv() {
-      const root = this.$root
-
-      return root.cctv
+      return this.$root.cctv
     },
     sugg() {
       return this.cctv.sugg
     },
     listChannel() {
-      const root = this.$root
-      const r = root.router
-      
-      return root.cctv.channel.list
+      return this.cctv.channel.list
     },
     curChannel() {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
       return this.listChannel[r.idxChannel] || {}
     },
@@ -171,25 +167,22 @@ export default {
       return this.curChannel.children || []
     },
     curAlbum() {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
       return this.listAlbum[r.idxAlbum] || {}
     },
     listVideo() {
-      const root = this.$root
-      const r = root.router
-      
-      return root.cctv.listVideo
+      return this.$root.cctv.listVideo
     },
   },
   methods: {
     clickChannel(elItem, idx, arr) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
-      root.cctv.sugg.text = ''
-      root.updateRouter({
+      vm.cctv.sugg.text = ''
+      vm.updateRouter({
         idxChannel: idx,
         idxAlbum: 0,
         isInSearch: false,
@@ -197,60 +190,60 @@ export default {
         totalPage: 0,
         videoInfo: {},
       }, 'push')
-      root.fetchVideoList()
+      vm.fetchVideoList()
     },
     clickAlbum(elItem, idx) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
-      root.cctv.sugg.text = ''
-      root.updateRouter({
+      vm.cctv.sugg.text = ''
+      vm.updateRouter({
         idxAlbum: idx,
         isInSearch: false,
         curPage: 0,
         totalPage: 0,
         videoInfo: {},
       }, 'push')
-      root.fetchVideoList()
+      vm.fetchVideoList()
     },
     clickAndPlayInCCTV() {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
       location.href = r.videoInfo.site
     },
     fetchSugg(iTimeout) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       const sugg = this.sugg
       const searchText = sugg.text.trim()
 
       if (!searchText) return
 
       sugg.oldText = sugg.text
-      clearTimeout(root.timerFetchSugg)
-      root.timerFetchSugg = setTimeout(() => {
-        root.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
+      clearTimeout(vm.timerFetchSugg)
+      vm.timerFetchSugg = setTimeout(() => {
+        vm.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
           const data = window.suggestJSON || []
-          root.cctv.sugg.list = data.map(v => v.name)
+          vm.cctv.sugg.list = data.map(v => v.name)
           sugg.cur = sugg.list.length
         })
       }, iTimeout === undefined ? 200 : iTimeout)
     },
     handleChangeCurPage(e) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
-      root.updateRouter({
+      vm.updateRouter({
         curPage: parseInt(e.target.value)
       }, 'push')
     },
     handleKeydownAndControlSearch(e) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       const sugg = this.sugg
       
-      switch (root.keyMap[e.keyCode]) {
+      switch (vm.keyMap[e.keyCode]) {
         case 'up':
         case 'down':
           e.preventDefault()
@@ -262,8 +255,8 @@ export default {
       }
     },
     handleClickAndChooseSugg() {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       const sugg = this.sugg
       const isPush = sugg.text.trim() !== r.searchText.trim()
       let isInSearch
@@ -273,7 +266,7 @@ export default {
       searchText = sugg.text.trim()
       isInSearch = !!searchText
 
-      root.updateRouter({
+      vm.updateRouter({
         isInSearch: isInSearch,
         searchText,
         videoInfo: {},
@@ -281,15 +274,15 @@ export default {
         totalPage: 0,
       }, isPush)
 
-      isInSearch && root.justFetchAlbum()
-      root.fetchVideoList()
+      isInSearch && vm.justFetchAlbum()
+      vm.fetchVideoList()
     },
   },
-  rootMethods: {
+  vmMethods: {
     playNext() {
-      const root = this.$root
-      const r = root.router
-      const cctv = root.cctv
+      const vm = this.$root
+      const r = vm.router
+      const cctv = vm.cctv
       let arr = []
       let targetIdx = -1
 
@@ -310,45 +303,45 @@ export default {
 
       r.playDir == '0' ? targetIdx-- : targetIdx++
       if (targetIdx >= 0 && targetIdx < arr.length) {
-        root.clickAndFetchVideoUrl(arr[targetIdx])
+        vm.clickAndFetchVideoUrl(arr[targetIdx])
       }
     },
     clearSugg() {
-      const root = this.$root
-      const sugg = root.cctv.sugg
+      const vm = this.$root
+      const sugg = vm.cctv.sugg
       
-      clearTimeout(root.timerFetchSugg)
+      clearTimeout(vm.timerFetchSugg)
       setTimeout(() => {
         sugg.cur = -1
         sugg.list = []
       }, 1)
     },
     justFetchAlbum() {
-      const root = this.$root
-      const r = root.router
-      const cctv = root.cctv
+      const vm = this.$root
+      const r = vm.router
+      const cctv = vm.cctv
       const sugg = cctv.sugg
       const searchText = r.searchText.trim()
 
       // console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
-      clearTimeout(root.timerJustFetchAlbum)
-      root.timerJustFetchAlbum = setTimeout(() => {
+      clearTimeout(vm.timerJustFetchAlbum)
+      vm.timerJustFetchAlbum = setTimeout(() => {
         // console.warn('%cjustFetchAlbum...', 'color: #0a0')
 
-        root.get('./api/pub.php', {
+        vm.get('./api/pub.php', {
           a: 'get',
           url: 'https://search.cctv.com/search.php?qtext=' + encodeURIComponent(searchText) + '&type=video'
         }, async (sHtml) => {
           const urls = sHtml.match(/https:\/\/r\.img\.cctvpic\.com\/so\/cctv\/list[^"]*/g) || []
 
-          root.cctv.searchResult = []
-          root.is.loading = false
+          vm.cctv.searchResult = []
+          vm.is.loading = false
 
           for (let i = 0; i < urls.length; i++) {
             await new Promise((succ) => {
               const src = urls[i]
               window.playlistArray = {}
-              root.loadScript(src, () => {
+              vm.loadScript(src, () => {
                 Object.keys(playlistArray).forEach((k) => {
                   const data = playlistArray[k]
                   let list = data.video.recent
@@ -373,16 +366,16 @@ export default {
             })
           }
 
-          root.is.loading = false
-          root.lazyLoad()
+          vm.is.loading = false
+          vm.lazyLoad()
         }, 10)
       })
     },
     fetchVideoList(cb) {
-      const root = this.$root
-      const r = root.router
-      const curAlbum = ((root.cctv.channel.list[r.idxChannel] || {}).children || [])[r.idxAlbum]
-      const cctv = root.cctv
+      const vm = this.$root
+      const r = vm.router
+      const curAlbum = ((vm.cctv.channel.list[r.idxChannel] || {}).children || [])[r.idxAlbum]
+      const cctv = vm.cctv
       const sugg = cctv.sugg
       const searchText = sugg.text.trim()
 
@@ -392,11 +385,11 @@ export default {
       }
 
       r.pageSize = r.isInSearch ? 20 : 100
-      root.is.loading = true
-      root.clearSugg()
-      clearTimeout(root.timerFetchVideoList)
+      vm.is.loading = true
+      vm.clearSugg()
+      clearTimeout(vm.timerFetchVideoList)
 
-      root.timerFetchVideoList = setTimeout(async () => {
+      vm.timerFetchVideoList = setTimeout(async () => {
         // console.warn('%cfetchVideoList ...', 'color: #a00')
 
         if (!r.isInSearch) {
@@ -407,7 +400,7 @@ export default {
         }
 
         function fetchByDefault() {
-          root.jsonp('http://api.cntv.cn/lanmu/videolistByColumnId', {
+          vm.jsonp('http://api.cntv.cn/lanmu/videolistByColumnId', {
             'id': curAlbum.id,
             'n': 100,
             'of': 'fdate',
@@ -419,7 +412,7 @@ export default {
             dataOrigin.response = dataOrigin.response || {}
             const data = dataOrigin.response.docs || []
 
-            root.is.loading = false
+            vm.is.loading = false
             cctv.listVideo = [{
               name: '',
               list: data.map((v) => {
@@ -433,7 +426,7 @@ export default {
               })
             }]
 
-            root.lazyLoad()
+            vm.lazyLoad()
             r.totalPage = dataOrigin.response.numFound || 0
             cb && cb()
             document.getElementById('boxVideoListAutoScroll').scrollTop = 0
@@ -442,7 +435,7 @@ export default {
 
         async function fetchBySearch() {
           await new Promise((succ) => {
-            root.get('./api/pub.php', {
+            vm.get('./api/pub.php', {
               a: 'get',
               url: 'https://search.cctv.com/ifsearch.php?page=' + r.curPage + '&qtext=' + searchText + '&sort=relevance&pageSize=20&type=video&vtime=-1&datepid=1&channel=&pageflag=1&qtext_str=' + searchText,
             }, (data) => {
@@ -468,8 +461,8 @@ export default {
                 list,
               }]
 
-              root.is.loading = false
-              root.lazyLoad()
+              vm.is.loading = false
+              vm.lazyLoad()
               succ()
             })
 
@@ -520,21 +513,21 @@ export default {
       props: ['listData'],
       methods: {
         clickAndFetchVideoUrl(elItem) {
-          const root = this.$root
-          const r = root.router
+          const vm = this.$root
+          const r = vm.router
 
-          elItem = root.clone(elItem)
+          elItem = vm.clone(elItem)
           elItem.title = elItem.title || elItem.desc
           delete elItem.desc
 
-          root.updateRouter({
+          vm.updateRouter({
             videoInfo: elItem
           }, 'push')
 
           if (elItem.id) {
             loadScript()
           } else {
-            root.get('./api/pub.php', {
+            vm.get('./api/pub.php', {
               a: 'get',
               url: elItem.site
             }, (sHtml) => {
@@ -551,31 +544,31 @@ export default {
             }
 
             const src = 'http://vdn.apps.cntv.cn/api/getIpadVideoInfo.do?pid=' + elItem.id + '&tai=ipad&from=html5&tsp=1553074558&vn=2049&vc=8AB31F7208274D1C0FD8874764B5EBE3&uid=2C5D032B73247D87E67C414F62BA2E7B&wlan='
-            root.loadScript(src)
+            vm.loadScript(src)
           }
         },
       },
       mounted() {
-        const root = this.$root
-        const r = root.router
+        const vm = this.$root
+        const r = vm.router
         
-        root.clickAndFetchVideoUrl = this.clickAndFetchVideoUrl
+        vm.clickAndFetchVideoUrl = this.clickAndFetchVideoUrl
       }
     }
   },
   mounted() {
-    const root = this.$root
-    const r = root.router
+    const vm = this.$root
+    const r = vm.router
     
-    // root.get('./static/data/cctv.json', {
-    root.get(root.is.local ? './api/pub.php' : './static/data/cctv.json', {
+    // vm.get('./static/data/cctv.json', {
+    vm.get(vm.is.local ? './api/pub.php' : './static/data/cctv.json', {
       a: 'getCCTVBasicInfo'
     }, (data) => {
-      root.cctv.channel.list = data
-      root.fetchVideoList()
+      vm.cctv.channel.list = data
+      vm.fetchVideoList()
     })
 
-    r.isInSearch && root.justFetchAlbum()
+    r.isInSearch && vm.justFetchAlbum()
     this.sugg.text = r.searchText
   },
 }
@@ -597,11 +590,11 @@ export default {
 }
 
 window.getHtml5VideoData  = function(data) {
-  const root = window.vm
-  const r = root.router
+  const vm = window.vm
+  const r = vm.router
 
   data = JSON.parse(data)
-  root.$set(r.videoInfo, 'm3u8', data.hls_url)
+  vm.$set(r.videoInfo, 'm3u8', data.hls_url)
 }
 
 </script>

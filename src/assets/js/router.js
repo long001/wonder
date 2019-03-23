@@ -1,7 +1,7 @@
 export default {
-  rootMethods: {
+  vmMethods: {
     routerInit() {
-      const root = this.$root
+      const vm = this.$root
       let r = {}
 
       try {
@@ -31,15 +31,15 @@ export default {
       delete r.site
       delete r.m3u8
       delete r.page
-      root.router = r
+      vm.router = r
     },
     updateRouter(o, isRouterPush) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
-      root.isRouterPush = isRouterPush
+      vm.isRouterPush = isRouterPush
       Object.keys(o).forEach((k, idx, arr) => {
-        root.$set(r, k, o[k])
+        vm.$set(r, k, o[k])
       })
     },
   }

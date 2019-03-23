@@ -1,11 +1,11 @@
 export default {
-  rootMethods: {
+  vmMethods: {
     lazyLoad() {
-      const root = this.$root
+      const vm = this.$root
       const dh = window.innerHeight
       
-      clearTimeout(root.timerLazyLoad)
-      root.timerLazyLoad = setTimeout(() => {
+      clearTimeout(vm.timerLazyLoad)
+      vm.timerLazyLoad = setTimeout(() => {
         ;[].slice.call(document.querySelectorAll('[lazy-load]')).forEach((node) => {
           const pos = node.getBoundingClientRect()
 

@@ -31,14 +31,14 @@ const coms = [
 
 export default {
   name: 'App',
-  rootData() {
-    const root = this.$root
+  vmData() {
+    const vm = this.$root
     
     return {
       ...(() => {
         let map = {}
         coms.forEach((item, idx, arr) => {
-          item.com.rootData && (map = {...map, ...item.com.rootData.call(root)})
+          item.com.vmData && (map = {...map, ...item.com.vmData.call(vm)})
         })
         return map
       })()
@@ -46,15 +46,15 @@ export default {
   },
   methods: {
     handleClickPanel(e) {
-      const root = this.$root
-      root.clearSugg()
+      const vm = this.$root
+      vm.clearSugg()
     }
   },
-  rootMethods: {
+  vmMethods: {
     ...(() => {
       let map = {}
       coms.forEach((item, idx, arr) => {
-        map = {...map, ...item.com.rootMethods}
+        map = {...map, ...item.com.vmMethods}
       })
       return map
     })()
@@ -69,9 +69,6 @@ export default {
     })(),
   },
   mounted() {
-    const root = this.$root
-    const r = root.router
-    
     
   }
 }

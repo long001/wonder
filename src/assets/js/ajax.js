@@ -1,5 +1,5 @@
 export default {
-  rootMethods: {
+  vmMethods: {
     err(dataOrigin, succ, fail) {
       let data = dataOrigin || ''
 
@@ -13,7 +13,7 @@ export default {
             console.log(data.msg)
             break
           case '2':
-            root.alert(data.msg)
+            vm.alert(data.msg)
             break
           default:
             console.warn('未处理的错误： ', data)
@@ -31,13 +31,13 @@ export default {
       }).join('&')
     },
     ajax(o) {
-      const root = this.$root
+      const vm = this.$root
       const xhr = new XMLHttpRequest()
       const method = (o.method || 'GET').toUpperCase()
       const data = o.data || {}
       let url = o.url
 
-      url = /^http/.test(url) ? url : (root.is.local ? root.localUrl + url.replace(/^\.\//, '') : url)
+      url = /^http/.test(url) ? url : (vm.is.local ? vm.localUrl + url.replace(/^\.\//, '') : url)
 
       function fail() {
         o.fail && o.fail(xhr)
@@ -46,7 +46,7 @@ export default {
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
           if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
-            root.err(xhr.responseText, o.succ, fail)
+            vm.err(xhr.responseText, o.succ, fail)
           } else {
             fail()
           }
@@ -55,7 +55,7 @@ export default {
 
       switch (method) {
         case 'GET':
-          xhr.open('GET', url + '?' + root.json2url(data), true)
+          xhr.open('GET', url + '?' + vm.json2url(data), true)
           xhr.send()
           break
         case 'POST':
@@ -84,7 +84,7 @@ export default {
       })
     },
     jsonp(url, data, succ, fail) {
-      const root = this.$root
+      const vm = this.$root
       const cbName = data['?']
       const script = document.createElement('script')
       const fnName = data[cbName] = 'jsonp_' + Math.random().toString().replace('0.', '')
@@ -98,7 +98,7 @@ export default {
         cb && cb(data)
       }
 
-      script.src = url + '?' + root.json2url(data)
+      script.src = url + '?' + vm.json2url(data)
       document.body.appendChild(script)
     },
     loadScript(url, succ, error) {
@@ -106,7 +106,7 @@ export default {
       script.src = url
       script.onload = script.onerror = (e) => {
         const cb = e.type === 'load' ? succ : error
-        e.type === 'error' && (root.is.loading = false)
+        e.type === 'error' && (vm.is.loading = false)
         cb && cb()
         // document.body.removeChild(script)
       }

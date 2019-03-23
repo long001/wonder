@@ -1,8 +1,8 @@
 import Hls from 'hls.js'
 
 export default {
-  rootData() {
-    const root = this.$root
+  vmData() {
+    const vm = this.$root
     const ua = navigator.userAgent
     const isLocal = ['localhost', '808'].some(k => location.origin.indexOf(k) > -1)
     const isIos = ua.indexOf('like Mac OS X') > -1
@@ -37,12 +37,12 @@ export default {
       urlSearchData: {},
     }
   },
-  rootMethods: {
+  vmMethods: {
     clone(o) {
       return JSON.parse(JSON.stringify(o))
     },
     initUrlSearchData() {
-      const root = this.$root
+      const vm = this.$root
       const urlSearchData = {}
 
       location.search.slice(1).split('&').forEach((str) => {
@@ -56,20 +56,20 @@ export default {
         urlSearchData[tmp[0]] = tmp[1]
       })
 
-      root.urlSearchData = urlSearchData
+      vm.urlSearchData = urlSearchData
     },
     initEvents() {
-      const root = this.$root
+      const vm = this.$root
 
-      window.onresize = root.lazyLoad.bind(root)
-      window.onpopstate = root.routerInit.bind(root)
+      window.onresize = vm.lazyLoad.bind(vm)
+      window.onpopstate = vm.routerInit.bind(vm)
     },
     init() {
-      const root = this.$root
+      const vm = this.$root
 
-      root.initUrlSearchData()
-      root.initEvents()
-      root.routerInit()
+      vm.initUrlSearchData()
+      vm.initEvents()
+      vm.routerInit()
     }
   }
 }

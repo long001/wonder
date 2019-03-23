@@ -24,11 +24,11 @@ Vue.component('player', {
   },
   methods: {
     handleTimeupdate(e) {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       const video = e.target
 
-      video.currentTime > 0 && root.$set(root.mapPlayTime, r.videoInfo.m3u8, video.currentTime)
+      video.currentTime > 0 && vm.$set(vm.mapPlayTime, r.videoInfo.m3u8, video.currentTime)
     }
   },
 })
@@ -49,14 +49,14 @@ Vue.component('pagin', {
   },
   computed: {
     pageNum() {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       
       return Math.ceil(r.totalPage / r.pageSize)
     },
     lis() {
-      const root = this.$root
-      const r = root.router
+      const vm = this.$root
+      const r = vm.router
       const curPage = r.curPage
       const pageNum = this.pageNum
       

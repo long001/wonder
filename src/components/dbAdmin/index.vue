@@ -6,17 +6,17 @@
 
 <script>
 export default {
-  rootData() {
-    const root = this.$root
-    const r = root.router
+  vmData() {
+    const vm = this.$root
+    const r = vm.router
     
     return {
 
     }
   },
-  rootMethods() {
-    const root = this.$root
-    const r = root.router
+  vmMethods() {
+    const vm = this.$root
+    const r = vm.router
     
     return {
 
