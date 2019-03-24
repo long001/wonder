@@ -24,7 +24,6 @@
       <div class="box-back flex-layout">
         <div class="gray-title">
           <div class="fr btn-box">
-            <span class="btn btn-primary btn-xs" onclick="location.reload()">刷新</span>
             <!-- <span class="btn btn-primary btn-xs">央视直播</span>
             <span class="btn btn-primary btn-xs">本站直播</span> -->
           </div>
@@ -88,8 +87,10 @@
             id="boxVideoListAutoScroll" 
             @scroll="$root.lazyLoad()"
           >
-            <section-parts :list-data="cctv.listVideo"></section-parts>
-            <section-parts :list-data="cctv.searchResult"></section-parts>
+            <div style="min-height: 100vh">
+              <section-parts :list-data="cctv.listVideo"></section-parts>
+              <section-parts :list-data="cctv.searchResult"></section-parts>
+            </div>
           </div>
 
           <loading :is-show="$root.is.loading"></loading>
@@ -205,7 +206,8 @@ export default {
       let searchText = sugg.list[sugg.cur] || sugg.text
       
       vm.updateRouter({
-        searchText
+        curPage: 0,
+        searchText,
       }, 'push')
       vm.fetchVideoList()
       vm.justFetchAlbum()
@@ -213,17 +215,19 @@ export default {
     fetchSugg(iTimeout) {
       const vm = this.$root
       const r = vm.router
-      const sugg = vm.$root.cctv.sugg
+      const sugg = vm.cctv.sugg
       const searchText = sugg.text.trim()
 
-      clearTimeout(vm.timerFetchSugg)
+      // clearTimeout(vm.timerFetchSugg)
+      vm.clearSugg()
+      if (!searchText) return
       vm.timerFetchSugg = setTimeout(() => {
         vm.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
           const data = window.suggestJSON || []
           sugg.list = data.map(v => v.name)
           sugg.cur = sugg.list.length
         })
-      }, iTimeout === undefined ? 10 : iTimeout)
+      }, iTimeout === undefined ? 240 : iTimeout)
     },
     clickChannel(elItem, idx, arr) {
       const vm = this.$root
@@ -310,11 +314,10 @@ export default {
       const r = vm.router
       const cctv = vm.cctv
       const searchText = r.searchText.trim()
+      const signJustFetchAlbum = vm.signJustFetchAlbum = Math.random()
 
-      // console.warn('%cjustFetchAlbum don\'t fetch', 'color: #0a0')
       clearTimeout(vm.timerJustFetchAlbum)
       vm.timerJustFetchAlbum = setTimeout(() => {
-        // console.warn('%cjustFetchAlbum...', 'color: #0a0')
         vm.get('./api/pub.php', {
           a: 'get',
           url: 'https://search.cctv.com/search.php?qtext=' + encodeURIComponent(searchText) + '&type=video'
@@ -327,6 +330,11 @@ export default {
               const src = urls[i]
               window.playlistArray = {}
               vm.loadScript(src, () => {
+                if (signJustFetchAlbum !== vm.signJustFetchAlbum) {
+                  succ()
+                  return
+                }
+
                 Object.keys(playlistArray).forEach((k) => {
                   const data = playlistArray[k]
                   let list = data.video.recent
@@ -356,26 +364,22 @@ export default {
         }, 10)
       })
     },
-    fetchVideoList(cb) {
+    fetchVideoList() {
       const vm = this.$root
       const r = vm.router
       const curAlbum = ((vm.cctv.channel.list[r.idxChannel] || {}).children || [])[r.idxAlbum]
       const cctv = vm.cctv
       const searchText = r.searchText.trim()
+      const signFetchVideoList = vm.signFetchVideoList = Math.random()
 
       if (!curAlbum) {
-        // console.warn('%cfetchVideoList don\'t fetch', 'color: #a00')
         return
       }
 
-      r.pageSize = searchText ? 20 : 100
       vm.is.loading = true
       vm.clearSugg()
-      clearTimeout(vm.timerFetchVideoList)
 
       vm.timerFetchVideoList = setTimeout(async () => {
-        // console.warn('%cfetchVideoList ...', 'color: #a00')
-
         if (!searchText) {
           cctv.searchResult = []
           fetchByDefault()
@@ -393,6 +397,8 @@ export default {
             'serviceId': 'tvcctv',
             '?': 'cb',
           }, (dataOrigin) => {
+            if (signFetchVideoList !== vm.signFetchVideoList) return
+
             dataOrigin.response = dataOrigin.response || {}
             const data = dataOrigin.response.docs || []
 
@@ -412,48 +418,57 @@ export default {
 
             vm.lazyLoad()
             r.totalPage = dataOrigin.response.numFound || 0
-            cb && cb()
             document.getElementById('boxVideoListAutoScroll').scrollTop = 0
           })
         }
 
         async function fetchBySearch() {
-          await new Promise((succ) => {
-            vm.get('./api/pub.php', {
-              a: 'get',
-              url: 'https://search.cctv.com/ifsearch.php?page=' + r.curPage + '&qtext=' + searchText + '&sort=relevance&pageSize=20&type=video&vtime=-1&datepid=1&channel=&pageflag=1&qtext_str=' + searchText,
-            }, (data) => {
-              r.totalPage = data.total
-              const list = data.list.map((item) => {
-                item.title = decodeURIComponent(item.all_title)
-                const rangeL = item.imglink.lastIndexOf('/') + 1
-                const rangeR = item.imglink.search(/-\d+/)
-                
-                item.id = rangeR > -1 ? item.imglink.slice(rangeL, rangeR) : ''
+          cctv.listVideo = [{
+            title: '全部视频结果共0条',
+            list: [],
+          }]
 
-                return {
-                  id: item.id,
-                  pic: item.imglink,
-                  title: '',
-                  desc: item.title,
-                  site: item.urllink,
+          for (let i = 0; i < 5; i++) {
+            const _curPage = r.curPage * 5 + i + 1
+
+            if (
+              i > 0 && _curPage > Math.ceil(r.totalPage / 20) ||
+              signFetchVideoList !== vm.signFetchVideoList
+            ) break
+
+            await new Promise((succ) => {
+              vm.get('./api/pub.php', {
+                a: 'get',
+                url: 'https://search.cctv.com/ifsearch.php?page=' + _curPage + '&qtext=' + searchText + '&sort=relevance&pageSize=20&type=video&vtime=-1&datepid=1&channel=&pageflag=1&qtext_str=' + searchText,
+              }, (data) => {
+                if (signFetchVideoList !== vm.signFetchVideoList) {
+                  succ()
+                  return
                 }
+                r.totalPage = data.total
+                const list = data.list.map((item) => {
+                  item.title = decodeURIComponent(item.all_title)
+                  const rangeL = item.imglink.lastIndexOf('/') + 1
+                  const rangeR = item.imglink.search(/-\d+/)
+                  
+                  return {
+                    id: rangeR > -1 ? item.imglink.slice(rangeL, rangeR) : '',
+                    pic: item.imglink,
+                    title: '',
+                    desc: item.title,
+                    site: item.urllink,
+                  }
+                })
+
+                cctv.listVideo[0].title = '全部视频结果共' + r.totalPage + '条'
+                cctv.listVideo[0].list = cctv.listVideo[0].list.concat(list)
+
+                vm.is.loading = false
+                vm.lazyLoad()
+                succ()
               })
-
-              cctv.listVideo = [{
-                title: '全部视频结果共' + r.totalPage + '条',
-                list,
-              }]
-
-              vm.is.loading = false
-              vm.lazyLoad()
-              succ()
             })
-
-            cb && cb()
-          })
-          
-          document.getElementById('boxVideoListAutoScroll').scrollTop = 0
+          }
         }
       }, 10)
     }

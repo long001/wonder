@@ -4,7 +4,20 @@
       <a href="javascript:">Codding.cn</a>
     </div>
     <div class="fr">
-      <a href="javascript:">后台管理</a>
+      <ul>
+        <li>
+          <a href="javascript:" onclick="location.reload()">刷新</a>
+        </li>
+        <li>
+          <a href="javascript:" onclick="history.back()">后退</a>
+        </li>
+        <li>
+          <a href="javascript:" onclick="history.forward()">前进</a>
+        </li>
+        <!-- <li>
+          <a href="javascript:">后台管理</a>
+        </li> -->
+      </ul>
     </div>
     <div class="mid nav ellipsis">
       <ul class="list-unstyled">
@@ -29,10 +42,10 @@ export default {
       nav: {
         list: [
           {name: 'CCTV', com: 'cctv'},
-          {name: 'WebFTP', com: 'webFTP'},
-          {name: 'DBAdmin', com: 'dbAdmin'},
-          {name: 'TinyBug', com: 'tinyBug'},
-          {name: 'Talker', com: 'talker'},
+          // {name: 'WebFTP', com: 'webFTP'},
+          // {name: 'DBAdmin', com: 'dbAdmin'},
+          // {name: 'TinyBug', com: 'tinyBug'},
+          // {name: 'Talker', com: 'talker'},
         ]
       }
     }
@@ -54,12 +67,10 @@ export default {
   .box-logo {
     font-size: 16px; font-weight: bold; margin-right: 0;
   }
-  .nav {
-    ul {
-      margin-bottom: 0;
-      li {
-        display: inline-block;
-      }
+  ul {
+    margin-bottom: 0;
+    li {
+      display: inline-block;
     }
   }
   a {display: block; padding: 0 12px;}
