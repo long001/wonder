@@ -23,7 +23,8 @@
       <ul class="list-unstyled">
         <li
           v-for="(item, idx) in $root.nav.list"
-          :class="{on: item.com === $root.router.coms[0]}"
+          :class="{on: item.com === $root.com}"
+          @click="$root.pushCom(item.com)"
         >
           <a href="javascript:">{{item.name}}</a>
         </li>
@@ -42,7 +43,7 @@ export default {
       nav: {
         list: [
           {name: 'CCTV', com: 'cctv'},
-          // {name: 'WebFTP', com: 'webFTP'},
+          {name: 'WebFTP', com: 'webFTP'},
           // {name: 'DBAdmin', com: 'dbAdmin'},
           // {name: 'TinyBug', com: 'tinyBug'},
           // {name: 'Talker', com: 'talker'},
@@ -63,7 +64,7 @@ export default {
 
 <style scoped lang="scss">
 .topbar {
-  background: #33373e; color: #fff; line-height: 3em;
+  background: #33373e; color: #fff; line-height: 3em; z-index: 10; position: relative;
   .box-logo {
     font-size: 16px; font-weight: bold; margin-right: 0;
   }
@@ -71,6 +72,10 @@ export default {
     margin-bottom: 0;
     li {
       display: inline-block;
+      color: #c3c6c9;
+      &.on {
+        color: #fff;
+      }
     }
   }
   a {display: block; padding: 0 12px;}

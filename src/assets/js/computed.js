@@ -14,5 +14,8 @@ export default {
     } else {
       return '0px'
     }
-  }
+  },
+  com() {
+    return (this.$root.router.coms || [])[0] || ''
+  },
 }

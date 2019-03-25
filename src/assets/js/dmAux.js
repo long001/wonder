@@ -28,3 +28,7 @@ Date.prototype.format = function(format) {
     return str.length < 2 ? '0' + str : str
   })
 }
+
+window.rand = function(m, n) {
+  return Math.floor(Math.random() * (n - m + 1) + m)
+}

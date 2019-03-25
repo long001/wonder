@@ -11,8 +11,9 @@ export default {
       r.coms = r.coms || []
       r.coms.length === 0 && r.coms.push('cctv')
       r.idxChannel = parseInt(r.idxChannel || 0)
-      r.playDir = parseInt(r.playDir || '0')
+      r.playDir = parseInt(r.playDir === undefined ? 1 : r.playDir)
       r.idxAlbum = parseInt(r.idxAlbum || 0)
+      r.countAni = r.countAni || 0
       r.searchText = r.searchText || ''
       r.videoInfo = r.videoInfo || {}
       r.videoInfo.id = r.videoInfo.id || r.videoId
@@ -41,6 +42,17 @@ export default {
       Object.keys(o).forEach((k, idx, arr) => {
         vm.$set(r, k, o[k])
       })
+    },
+    pushCom(com, o) {
+      const root = this.$root
+      const r = root.router
+
+      o && root.updateRouter(o)
+      if (com === r.coms[0]) return
+      root.router.countAni++
+      root.isRouterPush = true
+      r.coms.unshift(com)
+      while (r.coms.length > 2) r.coms.pop()
     },
   }
 }

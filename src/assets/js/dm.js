@@ -10,6 +10,8 @@ export default {
     const isWin = ua.indexOf('Windows NT') > -1
 
     return {
+      lenAni: 30,
+      localUrl: 'http://192.168.10.103/wonder/',
       dw: window.innerWidth,
       dh: window.innerHeight,
       is: {
@@ -29,12 +31,19 @@ export default {
         '40': 'down',
         '37': 'left',
       },
-      localUrl: 'http://192.168.10.103/wonder/',
       ex: {},
       router: {
         coms: [],
         videoInfo: {},
         searchText: '',
+      },
+      alertData: {
+        isShow: 0,
+        msg: 'Hello Again'
+      },
+      confirmData: {
+        isShow: 0,
+        msg: 'Hello Again'
       },
       urlSearchData: {},
     }
@@ -42,6 +51,18 @@ export default {
   vmMethods: {
     clone(o) {
       return JSON.parse(JSON.stringify(o))
+    },
+    alert(msg) {
+      const root = this.$root
+
+      root.alertData.isShow = true
+      root.alertData.msg = msg
+    },
+    confirm(msg) {
+      const root = this.$root
+
+      root.confirmData.isShow = true
+      root.confirmData.msg = msg
     },
     initUrlSearchData() {
       const vm = this.$root

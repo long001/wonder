@@ -12,15 +12,15 @@ export default {
     }
   },
   'router.idxChannel'(newVal) {
-    console.warn('%c change router.idxChannel', 'color: #09f')
+    console.warn('%c change router.idxChannel', 'color: #08e')
     this.$root.fetchVideoList()
   },
   'router.idxAlbum'(newVal) {
-    console.warn('%c change router.idxAlbum', 'color: #09f')
+    console.warn('%c change router.idxAlbum', 'color: #08e')
     this.$root.fetchVideoList()
   },
   'router.searchText'(newVal) {
-    console.warn('%c change router.searchText', 'color: #09f')
+    console.warn('%c change router.searchText', 'color: #08e')
     const vm = this.$root
     const r = vm.router
 
@@ -32,15 +32,15 @@ export default {
     }
   },
   'router.curPage'(newVal) {
-    console.warn('%c change router.curPage', 'color: #09f')
+    console.warn('%c change router.curPage', 'color: #08e')
     this.$root.fetchVideoList()
   },
   'router.pageSize'(newVal) {
-    console.warn('%c change router.pageSize', 'color: #09f')
+    console.warn('%c change router.pageSize', 'color: #08e')
     this.$root.fetchVideoList()
   },
   'router.videoInfo.m3u8'(newVal) {
-    console.warn('%c change router.videoInfo.m3u8', 'color: #09f')
+    console.warn('%c change router.videoInfo.m3u8', 'color: #08e')
     if (!newVal) return
     this.$root.playM3u8()
   },

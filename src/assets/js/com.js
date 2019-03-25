@@ -123,3 +123,63 @@ Vue.component('loading', {
   `,
   props: ['isShow']
 })
+
+Vue.component('alert', {
+  template: `
+    <div id="alert" class="panel-notice"
+      v-if="$root.alertData.isShow"
+    >
+      <div class="inner">
+        <div class="box-msg" v-html="$root.alertData.msg"></div>
+        <div class="box-btn flex">
+          <div class="_1 btn-sure" tabindex="1"
+            @click="handleSure"
+          >确定</div>
+        </div>
+      </div>
+    </div>
+  `,
+  methods: {
+    handleSure() {
+      const vm = this.$root
+
+      vm.alertData.isShow = 0
+      vm.handleAlertSure && vm.handleAlertSure()
+      delete vm.handleAlertSure
+    }
+  }
+})
+
+Vue.component('confirm', {
+  template: `
+    <div id="confirm" class="panel-notice"
+      v-if="$root.confirmData.isShow"
+    >
+      <div class="inner">
+        <div class="box-msg" v-html="$root.confirmData.msg"></div>
+        <div class="box-btn flex">
+          <div class="_1 btn-sure" tabindex="1"
+            @click="handleSure"
+          >确定</div>
+          <div class="_2" tabindex="1"
+            @click="$root.confirmData.isShow = 0"
+          >取消</div>
+        </div>
+      </div>
+    </div>
+  `,
+  methods: {
+    handleSure(e) {
+      const vm = this.$root
+      
+      vm.confirmData.isShow = 0
+      vm.handleConfirmSure && vm.handleConfirmSure()
+      delete vm.handleConfirmSure
+    }
+  }
+})
+
+// setTimeout(() => {
+//   vm.confirm('a')
+//   vm.alert('a')
+// }, 0)

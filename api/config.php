@@ -2,7 +2,9 @@
 error_reporting(1);
 header('Content-Type: text/html; Charset=utf-8');
 
-if (preg_match('/808/', $_SERVER['SERVER_NAME'])) {
+define(isLocal, $_SERVER['SERVER_NAME'] === '192.168.10.103');
+
+if (isLocal) {
   header('Access-Control-Allow-Origin: *');
 }
 

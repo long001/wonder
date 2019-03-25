@@ -30,7 +30,7 @@
           <div class="ellipsis" v-if="$root.isInSearch">{{'搜索结果：' + r.searchText + ' (' + r.totalPage + ')'}}</div>
           <div class="ellipsis" v-else>{{curAlbum.name + ' (' + r.totalPage + ')'}}</div>
         </div>
-        <form
+        <form style="height: 54px;" 
           @submit.prevent="chooseSugg"
         >
           <div class="flex-layout flex-row">
@@ -456,8 +456,7 @@ export default {
                     item.id = ''
                   }
 
-                  console.log(item.imglink.replace(/^http/, ''), item.id)
-                  
+                  // console.log(item.imglink.replace(/^http/, ''), item.id)
                   return {
                     id: item.id,
                     pic: item.imglink,
@@ -550,14 +549,13 @@ export default {
           }
 
           function loadScript() {
-            if (!elItem.id) {
-              alert('无法播放当前视频，点击确定进入央视播放')
-              location.href = elItem.site
-              return
+            if (elItem.id) {
+              vm.loadScript('http://vdn.apps.cntv.cn/api/getIpadVideoInfo.do?pid=' + elItem.id + '&tai=ipad&from=html5&tsp=1553074558&vn=2049&vc=8AB31F7208274D1C0FD8874764B5EBE3&uid=2C5D032B73247D87E67C414F62BA2E7B&wlan=')
+            } else {
+              if (confirm('无法播放当前视频，点击确定进入央视播放')) {
+                location.href = elItem.site
+              }
             }
-
-            const src = 'http://vdn.apps.cntv.cn/api/getIpadVideoInfo.do?pid=' + elItem.id + '&tai=ipad&from=html5&tsp=1553074558&vn=2049&vc=8AB31F7208274D1C0FD8874764B5EBE3&uid=2C5D032B73247D87E67C414F62BA2E7B&wlan='
-            vm.loadScript(src)
           }
         },
       },

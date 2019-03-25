@@ -1,9 +1,5 @@
 <?php 
-// require './utils/safe.php';
-
-if ($_SERVER['HTTP_HOST'] === '192.168.10.103') {
-  header('Access-Control-Allow-Origin: *');
-}
+require './safe.php';
 
 switch ($_REQUEST['a']) {
   case 'get':
