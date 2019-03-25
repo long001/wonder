@@ -40,8 +40,8 @@
                   <input type="text" class="form-control" placeholder="搜点什么..."
                     v-model="sugg.text"
                     @keydown="handleKeydownAndControlSugg"
-                    @input="fetchSugg()"
-                    @click.stop="fetchSugg(1)"
+                    @input="fetchSugg($event)"
+                    @click.stop="fetchSugg($event, 1)"
                   >
                   <div class="panel-sugg" v-if="sugg.list.length > 0 && sugg.text.trim()">
                     <ul>
@@ -213,14 +213,13 @@ export default {
       vm.fetchVideoList()
       vm.justFetchAlbum()
     },
-    fetchSugg(iTimeout) {
+    fetchSugg(e, iTimeout) {
       const vm = this.$root
       const r = vm.router
       const sugg = vm.cctv.sugg
       const searchText = sugg.text.trim()
 
-      // clearTimeout(vm.timerFetchSugg)
-      vm.clearSugg()
+      e.type === 'click' ? clearTimeout(vm.timerFetchSugg) : vm.clearSugg()
       if (!searchText) return
       vm.timerFetchSugg = setTimeout(() => {
         vm.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
@@ -448,7 +447,7 @@ export default {
                 }
                 r.totalPage = data.total
                 const list = data.list.map((item) => {
-                  if (/\/\w{32}-\d+\.\w+$/.test('d81fce76462147a29e751f4e29a1a66d-180.jpg')) {
+                  if (/\/\w{32}-\d+\.\w+$/.test(item.imglink)) {
                     const src = item.imglink
                     const rangeL = src.lastIndexOf('/') + 1
                     const rangeR = src.search(/-\d+/)
@@ -456,6 +455,8 @@ export default {
                   } else {
                     item.id = ''
                   }
+
+                  console.log(item.imglink.replace(/^http/, ''), item.id)
                   
                   return {
                     id: item.id,
@@ -520,11 +521,11 @@ export default {
       `,
       props: ['listData'],
       methods: {
-        clickAndFetchVideoUrl(elItem) {
+        clickAndFetchVideoUrl(elItemOrigin) {
           const vm = this.$root
           const r = vm.router
-
-          elItem = vm.clone(elItem)
+          const elItem = vm.clone(elItemOrigin)
+          
           elItem.title = elItem.title || elItem.desc
           delete elItem.desc
           console.log(elItem)
@@ -541,7 +542,9 @@ export default {
               a: 'get',
               url: elItem.site
             }, (sHtml) => {
-              r.videoInfo.id = elItem.id = (sHtml.match(/"videoCenterId","([^"]*)"/m) || [])[1] || ''
+              r.videoInfo.id = elItemOrigin.id = 
+              (sHtml.match(/"videoCenterId","([^"]*)"/m) || [])[1] || 
+              (sHtml.match(/(?:guid = ")(\w{32})(?:")/) || [])[1] || ''
               loadScript()
             })
           }
