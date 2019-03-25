@@ -31,7 +31,7 @@ export default {
             !vm.is.local && video.play()
           })
         } else {
-          alert('你的设备不支持播放m3u8')
+          vm.alert('你的设备不支持播放m3u8')
         }
       })
     }

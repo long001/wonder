@@ -525,6 +525,7 @@ export default {
           const r = vm.router
           const elItem = vm.clone(elItemOrigin)
           
+          vm.is.loading = true
           elItem.title = elItem.title || elItem.desc
           delete elItem.desc
           console.log(elItem)
@@ -601,6 +602,7 @@ window.getHtml5VideoData  = function(data) {
   const vm = window.vm
   const r = vm.router
 
+  vm.is.loading = false
   data = JSON.parse(data)
   vm.$set(r.videoInfo, 'm3u8', data.hls_url)
 }

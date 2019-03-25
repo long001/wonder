@@ -52,17 +52,19 @@ export default {
     clone(o) {
       return JSON.parse(JSON.stringify(o))
     },
-    alert(msg) {
-      const root = this.$root
+    alert(msg, cb) {
+      const vm = this.$root
 
-      root.alertData.isShow = true
-      root.alertData.msg = msg
+      vm.alertData.isShow = true
+      vm.alertData.msg = msg
+      vm.handleAlertSure = cb
     },
-    confirm(msg) {
-      const root = this.$root
+    confirm(msg, cb) {
+      const vm = this.$root
 
-      root.confirmData.isShow = true
-      root.confirmData.msg = msg
+      vm.confirmData.isShow = true
+      vm.confirmData.msg = msg
+      vm.handleConfirmSure = cb
     },
     initUrlSearchData() {
       const vm = this.$root
@@ -84,13 +86,20 @@ export default {
     initEvents() {
       const vm = this.$root
 
-      // window.addEventListner('orientationchange')
+      window.onpopstate = vm.routerInit.bind(vm)
       window.onresize = window.onorientationchange = (e) => {
         vm.dw = window.innerWidth
         vm.dh = window.innerHeight
         vm.lazyLoad.call(vm)
       }
-      window.onpopstate = vm.routerInit.bind(vm)
+      document.onkeydown = (e) => {
+        switch (vm.keyMap[e.keyCode]) {
+          case 'esc':
+            vm.alertData.isShow = false
+            vm.confirmData.isShow = false
+            break
+        }
+      }
     },
     init() {
       const vm = this.$root

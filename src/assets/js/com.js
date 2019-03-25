@@ -126,18 +126,20 @@ Vue.component('loading', {
 
 Vue.component('alert', {
   template: `
-    <div id="alert" class="panel-notice"
-      v-if="$root.alertData.isShow"
-    >
-      <div class="inner">
-        <div class="box-msg" v-html="$root.alertData.msg"></div>
-        <div class="box-btn flex">
-          <div class="_1 btn-sure" tabindex="1"
-            @click="handleSure"
-          >确定</div>
+    <transition name="fade">
+      <div id="alert" class="panel-notice"
+        v-if="$root.alertData.isShow"
+      >
+        <div class="inner">
+          <div class="box-msg" v-html="$root.alertData.msg"></div>
+          <div class="box-btn flex">
+            <div class="_1 btn-sure" tabindex="1"
+              @click="handleSure"
+            >确定</div>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
   `,
   methods: {
     handleSure() {
@@ -152,21 +154,23 @@ Vue.component('alert', {
 
 Vue.component('confirm', {
   template: `
-    <div id="confirm" class="panel-notice"
-      v-if="$root.confirmData.isShow"
-    >
-      <div class="inner">
-        <div class="box-msg" v-html="$root.confirmData.msg"></div>
-        <div class="box-btn flex">
-          <div class="_1 btn-sure" tabindex="1"
-            @click="handleSure"
-          >确定</div>
-          <div class="_2" tabindex="1"
-            @click="$root.confirmData.isShow = 0"
-          >取消</div>
+    <transition name="fade">
+      <div id="confirm" class="panel-notice"
+        v-if="$root.confirmData.isShow"
+      >
+        <div class="inner">
+          <div class="box-msg" v-html="$root.confirmData.msg"></div>
+          <div class="box-btn flex">
+            <div class="_1 btn-sure" tabindex="1"
+              @click="handleSure"
+            >确定</div>
+            <div class="_2" tabindex="1"
+              @click="$root.confirmData.isShow = 0"
+            >取消</div>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
   `,
   methods: {
     handleSure(e) {
