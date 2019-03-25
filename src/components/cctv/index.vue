@@ -205,6 +205,7 @@ export default {
       const sugg = cctv.sugg
       let searchText = sugg.list[sugg.cur] || sugg.text
       
+      console.log('搜索：' + searchText)
       vm.updateRouter({
         curPage: 0,
         searchText,
@@ -447,16 +448,22 @@ export default {
                 }
                 r.totalPage = data.total
                 const list = data.list.map((item) => {
-                  item.title = decodeURIComponent(item.all_title)
-                  const rangeL = item.imglink.lastIndexOf('/') + 1
-                  const rangeR = item.imglink.search(/-\d+/)
+                  if (/\/\w{32}-\d+\.\w+$/.test('d81fce76462147a29e751f4e29a1a66d-180.jpg')) {
+                    const src = item.imglink
+                    const rangeL = src.lastIndexOf('/') + 1
+                    const rangeR = src.search(/-\d+/)
+                    item.id = src.slice(rangeL, rangeR)
+                  } else {
+                    item.id = ''
+                  }
                   
                   return {
-                    id: rangeR > -1 ? item.imglink.slice(rangeL, rangeR) : '',
+                    id: item.id,
                     pic: item.imglink,
                     title: '',
-                    desc: item.title,
+                    desc: decodeURIComponent(item.all_title),
                     site: item.urllink,
+                    raw: item,
                   }
                 })
 
@@ -468,6 +475,8 @@ export default {
                 succ()
               })
             })
+
+            document.getElementById('boxVideoListAutoScroll').scrollTop = 0
           }
         }
       }, 10)
@@ -518,6 +527,8 @@ export default {
           elItem = vm.clone(elItem)
           elItem.title = elItem.title || elItem.desc
           delete elItem.desc
+          console.log(elItem)
+          console.log(JSON.stringify(elItem))
 
           vm.updateRouter({
             videoInfo: elItem
