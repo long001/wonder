@@ -36,6 +36,10 @@ export default {
         coms: [],
         videoInfo: {},
         searchText: '',
+        dir: {
+          map: {},
+          list: [],
+        },
       },
       alertData: {
         isShow: 0,
@@ -59,12 +63,13 @@ export default {
       vm.alertData.msg = msg
       vm.handleAlertSure = cb
     },
-    confirm(msg, cb) {
+    confirm(msg, cbSure, cbCancel) {
       const vm = this.$root
 
       vm.confirmData.isShow = true
       vm.confirmData.msg = msg
-      vm.handleConfirmSure = cb
+      vm.handleConfirmSure = cbSure
+      vm.handleConfirmCancel = cbCancel
     },
     initUrlSearchData() {
       const vm = this.$root

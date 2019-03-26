@@ -29,6 +29,8 @@ export default {
         r.pageSize = parseInt(r.pageSize || 100)
         r.totalPage = parseInt(r.totalPage || 0)
       }
+      r.dir = r.dir || {}
+      r.dir.list = r.dir.list || []
       delete r.site
       delete r.m3u8
       delete r.page

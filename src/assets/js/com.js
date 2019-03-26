@@ -165,7 +165,7 @@ Vue.component('confirm', {
               @click="handleSure"
             >确定</div>
             <div class="_2" tabindex="1"
-              @click="$root.confirmData.isShow = 0"
+              @click="handleCancel"
             >取消</div>
           </div>
         </div>
@@ -179,7 +179,14 @@ Vue.component('confirm', {
       vm.confirmData.isShow = 0
       vm.handleConfirmSure && vm.handleConfirmSure()
       delete vm.handleConfirmSure
-    }
+    },
+    handleCancel(e) {
+      const vm = this.$root
+      
+      vm.confirmData.isShow = 0
+      vm.handleConfirmCancel && vm.handleConfirmCancel()
+      delete vm.handleConfirmCancel
+    },
   }
 })
 

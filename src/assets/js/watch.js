@@ -25,11 +25,8 @@ export default {
     const r = vm.router
 
     vm.cctv.sugg.text = r.searchText
-    
-    if (newVal) {
-      vm.fetchVideoList()
-      vm.justFetchAlbum()
-    }
+    vm.fetchVideoList()
+    newVal && vm.justFetchAlbum()
   },
   'router.curPage'(newVal) {
     console.warn('%c change router.curPage', 'color: #08e')

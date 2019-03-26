@@ -418,7 +418,10 @@ export default {
 
             vm.lazyLoad()
             r.totalPage = dataOrigin.response.numFound || 0
-            document.getElementById('boxVideoListAutoScroll').scrollTop = 0
+            {
+              const el = document.getElementById('boxVideoListAutoScroll')
+              el && (el.scrollTop = 0)
+            }
           })
         }
 
@@ -463,9 +466,11 @@ export default {
                     title: '',
                     desc: decodeURIComponent(item.all_title),
                     site: item.urllink,
-                    raw: item,
+                    // raw: item,
                   }
-                })
+                })/*.filter((v) => {
+                  return v.site.indexOf('art.cctv.com') > -1
+                })*/
 
                 cctv.listVideo[0].title = '全部视频结果共' + r.totalPage + '条'
                 cctv.listVideo[0].list = cctv.listVideo[0].list.concat(list)
@@ -476,7 +481,10 @@ export default {
               })
             })
 
-            document.getElementById('boxVideoListAutoScroll').scrollTop = 0
+            /*{
+              const el = document.getElementById('boxVideoListAutoScroll')
+              el && (el.scrollTop = 0)
+            }*/
           }
         }
       }, 10)
@@ -495,7 +503,10 @@ export default {
               <strong>{{item.title}}</strong>
             </div>
             <ul class="list-video">
-              <li v-for="(item, idx) in item.list">
+              <li
+                v-for="(item, idx) in item.list"
+                :key="item.desc + idx"
+              >
                 <div class="inner"
                   :style="{backgroundImage: 'url(./static/img/img-blank.png?a)'}"
                   :lazy-load="item.pic"
@@ -528,8 +539,8 @@ export default {
           vm.is.loading = true
           elItem.title = elItem.title || elItem.desc
           delete elItem.desc
-          console.log(elItem)
-          console.log(JSON.stringify(elItem))
+          // console.log(elItem)
+          // console.log(JSON.stringify(elItem))
 
           vm.updateRouter({
             videoInfo: elItem
@@ -542,7 +553,7 @@ export default {
               a: 'get',
               url: elItem.site
             }, (sHtml) => {
-              r.videoInfo.id = elItemOrigin.id = 
+              r.videoInfo.id = elItemOrigin.id = elItem.id = 
               (sHtml.match(/"videoCenterId","([^"]*)"/m) || [])[1] || 
               (sHtml.match(/(?:guid = ")(\w{32})(?:")/) || [])[1] || ''
               loadScript()
@@ -553,9 +564,11 @@ export default {
             if (elItem.id) {
               vm.loadScript('http://vdn.apps.cntv.cn/api/getIpadVideoInfo.do?pid=' + elItem.id + '&tai=ipad&from=html5&tsp=1553074558&vn=2049&vc=8AB31F7208274D1C0FD8874764B5EBE3&uid=2C5D032B73247D87E67C414F62BA2E7B&wlan=')
             } else {
-              if (confirm('无法播放当前视频，点击确定进入央视播放')) {
+              vm.confirm('无法播放当前视频，点击确定进入央视播放', () => {
                 location.href = elItem.site
-              }
+              }, () => {
+                vm.is.loading = false
+              })
             }
           }
         },
@@ -629,6 +642,7 @@ window.getHtml5VideoData  = function(data) {
   }
   & > .box-main {
     flex: 1; overflow-x: hidden; overflow-y: auto; position: relative;
+    user-select: none;
     & > div {
       width: 100%; height: 100%; position: absolute; left: 0; top: 0; z-index: 1;
     }
@@ -643,7 +657,7 @@ window.getHtml5VideoData  = function(data) {
         div {
           section {
             .section-title {
-              margin: 20px 0 12px 0;
+              margin: 15px 0 12px 0;
             }
           }
         }
@@ -720,5 +734,5 @@ window.getHtml5VideoData  = function(data) {
   }
 }
 
-#boxVideoListAutoScroll > div:first-child .section-title {margin-top: 5px !important;}
+#boxVideoListAutoScroll > div > div:first-child .section-title {margin-top: 5px !important;}
 </style>

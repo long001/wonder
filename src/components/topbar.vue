@@ -3,7 +3,9 @@
     <div class="fl box-logo hidden-xs">
       <a href="javascript:">Codding.cn</a>
     </div>
-    <div class="fr">
+    <div class="fr"
+      v-if="$root.urlSearchData.isInApp"
+    >
       <ul>
         <li>
           <a href="javascript:" onclick="location.reload()">刷新</a>
@@ -25,6 +27,7 @@
           v-for="(item, idx) in $root.nav.list"
           :class="{on: item.com === $root.com}"
           @click="$root.pushCom(item.com)"
+          v-if="!item.isHide"
         >
           <a href="javascript:">{{item.name}}</a>
         </li>
@@ -39,15 +42,19 @@ export default {
     const vm = this.$root
     const r = vm.router
 
+    setTimeout(() => {
+      vm.nav.list = [
+        {name: 'CCTV', com: 'cctv'},
+        {name: 'WebFTP', com: 'webFTP', isHide: !vm.is.local},
+        // {name: 'DBAdmin', com: 'dbAdmin'},
+        // {name: 'TinyBug', com: 'tinyBug'},
+        // {name: 'Talker', com: 'talker'},
+      ]
+    }, 0)
+
     return {
       nav: {
-        list: [
-          {name: 'CCTV', com: 'cctv'},
-          {name: 'WebFTP', com: 'webFTP'},
-          // {name: 'DBAdmin', com: 'dbAdmin'},
-          // {name: 'TinyBug', com: 'tinyBug'},
-          // {name: 'Talker', com: 'talker'},
-        ]
+        list: []
       }
     }
   },
