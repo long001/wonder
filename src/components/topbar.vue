@@ -1,6 +1,6 @@
 <template>
   <div class="topbar lmr" :style="{paddingTop: $root.topPt}">
-    <div class="fl box-logo hidden-xs">
+    <div class="fl box-logo a-hidden-xs">
       <a href="javascript:">Codding.cn</a>
     </div>
     <div class="fr"
@@ -38,14 +38,14 @@
 
 <script>
 export default {
-  vmData() {
+  rootData() {
     const vm = this.$root
     const r = vm.router
 
     setTimeout(() => {
       vm.nav.list = [
         {name: 'CCTV', com: 'cctv'},
-        {name: 'WebFTP', com: 'webFTP', isHide: !vm.is.local},
+        {name: 'WebFTP', com: 'webFtp', isHide: !vm.is.local},
         // {name: 'DBAdmin', com: 'dbAdmin'},
         // {name: 'TinyBug', com: 'tinyBug'},
         // {name: 'Talker', com: 'talker'},
@@ -58,7 +58,7 @@ export default {
       }
     }
   },
-  vmMethods() {
+  rootMethods() {
     const vm = this.$root
     const r = vm.router
     
@@ -71,7 +71,9 @@ export default {
 
 <style scoped lang="scss">
 .topbar {
-  background: #33373e; color: #fff; line-height: 3em; z-index: 10; position: relative;
+  background: #33373e; line-height: 3em;
+  position: relative; z-index: 10; color: #fff;
+  user-select: none;
   .box-logo {
     font-size: 16px; font-weight: bold; margin-right: 0;
   }

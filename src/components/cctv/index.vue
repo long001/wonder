@@ -30,7 +30,7 @@
           <div class="ellipsis" v-if="$root.isInSearch">{{'搜索结果：' + r.searchText + ' (' + r.totalPage + ')'}}</div>
           <div class="ellipsis" v-else>{{curAlbum.name + ' (' + r.totalPage + ')'}}</div>
         </div>
-        <form style="height: 54px;" 
+        <form style="height: 54px;"
           @submit.prevent="chooseSugg"
         >
           <div class="flex-layout flex-row">
@@ -123,7 +123,7 @@
 
 <script>
 export default {
-  vmData() {
+  rootData() {
     let mapPlayTime = {}
 
     try {
@@ -271,7 +271,7 @@ export default {
       }, 'push')
     },
   },
-  vmMethods: {
+  rootMethods: {
     clearSugg() {
       const vm = this.$root
       const r = vm.router
@@ -361,8 +361,8 @@ export default {
 
           vm.is.loading = false
           vm.lazyLoad()
-        }, 10)
-      })
+        })
+      }, 10)
     },
     fetchVideoList() {
       const vm = this.$root
@@ -460,11 +460,14 @@ export default {
                   }
 
                   // console.log(item.imglink.replace(/^http/, ''), item.id)
+                  try {item.all_title = decodeURIComponent(item.all_title)} catch (e) {}
+
                   return {
                     id: item.id,
                     pic: item.imglink,
                     title: '',
-                    desc: decodeURIComponent(item.all_title),
+                    desc: item.all_title,
+                    desc: item.all_title,
                     site: item.urllink,
                     // raw: item,
                   }
@@ -481,10 +484,10 @@ export default {
               })
             })
 
-            /*{
+            {
               const el = document.getElementById('boxVideoListAutoScroll')
               el && (el.scrollTop = 0)
-            }*/
+            }
           }
         }
       }, 10)
@@ -644,13 +647,16 @@ window.getHtml5VideoData  = function(data) {
     flex: 1; overflow-x: hidden; overflow-y: auto; position: relative;
     user-select: none;
     & > div {
-      width: 100%; height: 100%; position: absolute; left: 0; top: 0; z-index: 1;
+      width: 100%; height: 100%; position: absolute; left: 0; top: 0;
     }
     .box-back {
       form {
         padding: 10px 12px;
         .form-control {
-          border-radius: 4px 0 0 4px;
+          border-radius: 4px 0 0 4px; z-index: auto;
+        }
+        .btn {
+          z-index: auto;
         }
       }
       .list-video-wrapper {

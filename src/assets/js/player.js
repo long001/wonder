@@ -1,7 +1,7 @@
 import Hls from 'hls.js'
 
 export default {
-  vmMethods: {
+  rootMethods: {
     playM3u8() {
       const vm = this.$root
       const r = vm.router

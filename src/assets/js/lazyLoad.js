@@ -1,5 +1,5 @@
 export default {
-  vmMethods: {
+  rootMethods: {
     lazyLoad() {
       const vm = this.$root
       const dh = window.innerHeight

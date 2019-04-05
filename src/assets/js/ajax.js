@@ -1,11 +1,13 @@
 export default {
-  vmMethods: {
+  rootMethods: {
     err(dataOrigin, succ, fail) {
       let data = dataOrigin || ''
 
       try {
         data = JSON.parse(data)
       } catch (e) {}
+
+      data = data || {code: 1, msg: '空数据'}
 
       if (data.code) {
         switch (data.code) {
@@ -20,7 +22,7 @@ export default {
             break
         }
 
-        fail && fail()
+        fail && fail(data)
       } else {
         succ && succ(data, dataOrigin)
       }
@@ -39,8 +41,8 @@ export default {
 
       url = /^http/.test(url) ? url : (vm.is.local ? vm.localUrl + url.replace(/^\.\//, '') : url)
 
-      function fail() {
-        o.fail && o.fail(xhr)
+      function fail(data) {
+        o.fail && o.fail(xhr, data)
       }
 
       xhr.onreadystatechange = () => {

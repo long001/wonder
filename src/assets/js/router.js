@@ -1,5 +1,5 @@
 export default {
-  vmMethods: {
+  rootMethods: {
     routerInit() {
       const vm = this.$root
       let r = {}
@@ -30,11 +30,17 @@ export default {
         r.totalPage = parseInt(r.totalPage || 0)
       }
       r.dir = r.dir || {}
+      r.dir.cur = r.dir.cur || 0
+      r.dir.zIndex = r.dir.zIndex || 0
+      r.dir = r.dir || {}
       r.dir.list = r.dir.list || []
       delete r.site
       delete r.m3u8
       delete r.page
-      vm.router = r
+
+      Object.keys(r).forEach((key) => {
+        vm.$set(vm.router, key, r[key])
+      })
     },
     updateRouter(o, isRouterPush) {
       const vm = this.$root

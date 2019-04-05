@@ -3,8 +3,8 @@
     <div class="flex-layout">
       <topbar></topbar>
       <div class="main-container">
-        <transition-group :name="'ani-com-' + ($root.router.countAni % $root.lenAni)">
-        <!-- <transition-group :name="'fade'"> -->
+        <!-- <transition-group :name="'ani-com-' + ($root.router.countAni % $root.lenAni)"> -->
+        <transition-group :name="'fade'">
           <div
             v-for="(item, idx) in $root.router.coms"
             :key="item.com + '-' + idx"
@@ -25,7 +25,7 @@ const coms = [
   {name: 'topbar', path: 'components/topbar'},
   
   {name: 'cctv', path: 'components/cctv'},
-  {name: 'webFTP', path: 'components/webFTP'},
+  {name: 'webFtp', path: 'components/webFtp'},
   {name: 'dbAdmin', path: 'components/dbAdmin'},
 ].map((item) => {
   item.com = require('@/' + item.path).default
@@ -34,24 +34,29 @@ const coms = [
 
 export default {
   name: 'App',
-  vmData() {
+  data() {
+    return {
+      
+    }
+  },
+  rootData() {
     const vm = this.$root
     
     return {
       ...(() => {
         let map = {}
         coms.forEach((item, idx, arr) => {
-          item.com.vmData && (map = {...map, ...item.com.vmData.call(vm)})
+          item.com.rootData && (map = {...map, ...item.com.rootData.call(vm)})
         })
         return map
       })()
     }
   },
-  vmMethods: {
+  rootMethods: {
     ...(() => {
       let map = {}
       coms.forEach((item, idx, arr) => {
-        map = {...map, ...item.com.vmMethods}
+        map = {...map, ...item.com.rootMethods}
       })
       return map
     })()
@@ -66,8 +71,11 @@ export default {
     })(),
   },
   mounted() {
+    const vm = this.$root
+    const r = vm.router
     
-  }
+    vm.app = this
+  },
 }
 </script>
 
@@ -76,10 +84,10 @@ export default {
   height: 100%; background: #000; overflow: hidden;
   display: flex; flex-direction: column;
   .main-container {
-    flex: 1; position: relative; z-index: 5;
+    flex: 1; position: relative;
     & > span {
       width: 100%; height: 100%; position: absolute;
-      transform-style: preserve-3d; transform: perspective(800px);
+      // transform-style: preserve-3d; transform: perspective(800px);
       & > div {
         width: 100%; height: 100%; position: absolute; left: 0; top: 0;
         background: #fff; overflow: auto;

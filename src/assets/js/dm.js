@@ -1,7 +1,7 @@
 import Hls from 'hls.js'
 
 export default {
-  vmData() {
+  rootData() {
     const vm = this.$root
     const ua = navigator.userAgent
     const isLocal = ['localhost', '808'].some(k => location.origin.indexOf(k) > -1)
@@ -11,7 +11,9 @@ export default {
 
     return {
       lenAni: 30,
-      localUrl: 'http://192.168.10.103/wonder/',
+      // localUrl: 'http://192.168.10.103/wonder/',
+      // localUrl: 'http://172.20.10.5/wonder/',
+      localUrl: 'http://localhost/wonder/',
       dw: window.innerWidth,
       dh: window.innerHeight,
       is: {
@@ -24,12 +26,19 @@ export default {
         supportHls: Hls.isSupported(),
       },
       keyMap: {
+        '8': 'backspace',
         '13': 'enter',
         '27': 'esc',
         '38': 'up',
         '39': 'right',
         '40': 'down',
         '37': 'left',
+        '65': 'a', '66': 'b', '67': 'c', '68': 'd', '69': 'e',
+        '70': 'f', '71': 'g', '72': 'h', '73': 'i', '74': 'j',
+        '75': 'k', '76': 'l', '77': 'm', '78': 'n', '79': 'o',
+        '80': 'p', '81': 'q', '82': 'r', '83': 's', '84': 't',
+        '85': 'u', '86': 'v', '87': 'w', '88': 'x', '89': 'y',
+        '90': 'z', 
       },
       ex: {},
       router: {
@@ -37,7 +46,8 @@ export default {
         videoInfo: {},
         searchText: '',
         dir: {
-          map: {},
+          cur: 0,
+          zIndex: 0,
           list: [],
         },
       },
@@ -52,7 +62,7 @@ export default {
       urlSearchData: {},
     }
   },
-  vmMethods: {
+  rootMethods: {
     clone(o) {
       return JSON.parse(JSON.stringify(o))
     },
@@ -97,14 +107,26 @@ export default {
         vm.dh = window.innerHeight
         vm.lazyLoad.call(vm)
       }
-      document.onkeydown = (e) => {
-        switch (vm.keyMap[e.keyCode]) {
-          case 'esc':
-            vm.alertData.isShow = false
-            vm.confirmData.isShow = false
-            break
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey) {
+          switch (vm.keyMap[e.keyCode]) {
+            case 'y':
+              history.forward()
+              break
+            case 'z':
+              history.back()
+              break
+          }
+        } else {
+          switch (vm.keyMap[e.keyCode]) {
+            case 'esc':
+              vm.alertData.isShow = false
+              vm.confirmData.isShow = false
+              vm.dir.new.isShow = 0
+              break
+          }
         }
-      }
+      }, false)
     },
     init() {
       const vm = this.$root

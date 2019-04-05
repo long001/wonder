@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  vmData() {
+  rootData() {
     const vm = this.$root
     const r = vm.router
     
@@ -14,7 +14,7 @@ export default {
 
     }
   },
-  vmMethods() {
+  rootMethods() {
     const vm = this.$root
     const r = vm.router
     

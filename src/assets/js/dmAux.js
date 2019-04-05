@@ -32,3 +32,36 @@ Date.prototype.format = function(format) {
 window.rand = function(m, n) {
   return Math.floor(Math.random() * (n - m + 1) + m)
 }
+
+export default {
+  rootMethods: {
+    getFileFromDataTransfer(dataTransfer, cb) {
+      if (dataTransfer.files.length === 0) {
+        return []
+      }
+      let timerRead = 0
+      let files = []
+      function singleRead(entry) {
+        if (entry.isFile) {
+          entry.file(function(file) {
+            file.fullPath = entry.fullPath
+            files.push(file)
+            clearTimeout(timerRead)
+            timerRead = setTimeout(function() {
+              cb && cb(files)
+            }, 300)
+          })
+        } else if (entry.isDirectory) {
+          entry.createReader().readEntries(function(entries) {
+            Array.prototype.slice.call(entries).forEach(singleRead)
+          })
+        }
+      }
+      Array.prototype.slice.call(dataTransfer.items).forEach(function(item) {
+        if (item.kind === 'file') {
+          singleRead(item.webkitGetAsEntry())
+        }
+      })
+    },
+  }
+}
