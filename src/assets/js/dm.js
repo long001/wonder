@@ -29,10 +29,11 @@ export default {
         '8': 'backspace',
         '13': 'enter',
         '27': 'esc',
+        '37': 'left',
         '38': 'up',
         '39': 'right',
         '40': 'down',
-        '37': 'left',
+        '46': 'delete',
         '65': 'a', '66': 'b', '67': 'c', '68': 'd', '69': 'e',
         '70': 'f', '71': 'g', '72': 'h', '73': 'i', '74': 'j',
         '75': 'k', '76': 'l', '77': 'm', '78': 'n', '79': 'o',
@@ -122,7 +123,7 @@ export default {
             case 'esc':
               vm.alertData.isShow = false
               vm.confirmData.isShow = false
-              vm.dir.new.isShow = 0
+              vm.webFtp && (vm.webFtp.dir.new.isShow = 0)
               break
           }
         }

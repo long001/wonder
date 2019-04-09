@@ -219,7 +219,7 @@ export default {
       const sugg = vm.cctv.sugg
       const searchText = sugg.text.trim()
 
-      e.type === 'click' ? clearTimeout(vm.timerFetchSugg) : vm.clearSugg()
+      e.type === 'click' ? clearTimeout(vm.timerFetchSugg) : vm.doClear()
       if (!searchText) return
       vm.timerFetchSugg = setTimeout(() => {
         vm.loadScript('https://search.cctv.com/webtvsuggest.php?q=' + encodeURIComponent(searchText), () => {
@@ -272,7 +272,7 @@ export default {
     },
   },
   rootMethods: {
-    clearSugg() {
+    doClear() {
       const vm = this.$root
       const r = vm.router
       const sugg = vm.cctv.sugg
@@ -280,6 +280,14 @@ export default {
       sugg.cur = sugg.list.length
       sugg.list = []
       clearTimeout(vm.timerFetchSugg)
+
+      if (vm.webFtp) {
+        const dir = vm.webFtp.dir
+        const fixMenu = vm.webFtp.fixMenu
+        dir.open.isShow = 0
+        dir.new.isShow = 0
+        fixMenu.isShow = 0
+      }
     },
     playNext() {
       const vm = this.$root
@@ -377,7 +385,7 @@ export default {
       }
 
       vm.is.loading = true
-      vm.clearSugg()
+      vm.doClear()
 
       vm.timerFetchVideoList = setTimeout(async () => {
         if (!searchText) {

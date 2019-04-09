@@ -1,5 +1,5 @@
 <template>
-  <div id="app" @click="$root.clearSugg">
+  <div id="app" @click="$root.doClear">
     <div class="flex-layout">
       <topbar></topbar>
       <div class="main-container">

@@ -2,31 +2,33 @@
   <div class="web-ftp" ref="webFtpEl">
     <div class="dir-list"
       ref="dirList"
-      @contextmenu.prevent="handleContextmenu"
+      @contextmenu.prevent="exec($event, '显示右键菜单')"
     >
       <section
         v-for="(dirItem, idx) in r.dir.list"
         :key="dirItem.k"
         :data-key="dirItem.k"
-        :dir-index="idx"
+        :dir-idx="idx"
         :class="['dir', {cur: idx === r.dir.cur}]"
         :style="dirItem.style"
       >
         <div class="lmr gray-title">
           <div class="fr">
-            <span>{{(dir.map[dirItem.path] || []).length}}</span>
+            <span v-if="(dir.map[dirItem.path] || []).length > 0">
+              {{dir.mapSelected[dirItem.path] || 0}} / 
+              {{(dir.map[dirItem.path] || []).length}}
+            </span>
             <i class="glyphicon glyphicon-pencil"></i>
             <i class="glyphicon glyphicon-remove"></i>
           </div>
           <div class="mid path-box">
             <input type="text" class="path-input" 
               :value="dirItem.path"
-              @keydown.enter="updateDirPath($event, dirItem)"
+              @keydown.stop.enter="updateDirPath($event, dirItem)"
             >
           </div>
         </div>
         <div class="auto-scroll">
-          <!-- <pre>{{dir.map[dirItem.path]}}</pre> -->
           <div class="space"
             v-if="(dir.map[dirItem.path] || {}).msg"
           >
@@ -63,6 +65,46 @@
 
     <transition name="fade">
       <div class="mask mask-open-dir"
+        v-if="dir.open.isShow"
+        @click="dir.open.isShow = false"
+      >
+        <div class="inner"
+          @click.stop
+        >
+          <div class="gray-title lmr">
+            <div class="fr">
+              <i class="glyphicon glyphicon-remove"
+                @click="dir.open.isShow = false"
+              ></i>
+            </div>
+            <div class="mid">打开文件夹</div>
+          </div>
+          <form class="space"
+            @submit.prevent="exec($event, 'do打开文件夹')"
+          >
+            <table class="table-form">
+              <tr>
+                <td>
+                  <input type="text" class="form-control" required 
+                    placeholder="打开文件夹"
+                    v-model="dir.open.path"
+                    @keydown.stop.esc="$root.doClear"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <input type="submit" value="确定" class="btn btn-success btn-block" />
+                </td>
+              </tr>
+            </table>
+          </form>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div class="mask mask-operate-dir"
         v-if="dir.new.isShow"
         @click="dir.new.isShow = false"
       >
@@ -75,16 +117,18 @@
                 @click="dir.new.isShow = false"
               ></i>
             </div>
-            <div class="mid">打开文件夹</div>
+            <div class="mid">{{(dir.new.isRename ? '重命名' : '新建') + (dir.new.isDir ? '文件夹' : '文件')}}</div>
           </div>
           <form class="space"
-            @submit.prevent="exec('打开文件夹')"
+            @submit.prevent="exec($event, 'do操作文件(夹)')"
           >
             <table class="table-form">
               <tr>
                 <td>
-                  <input type="text" class="form-control" required placeholder="输入路径" 
-                    v-model="dir.new.path"
+                  <input type="text" class="form-control" required 
+                    placeholder="名称"
+                    v-model="dir.new.name"
+                    @keydown.stop.esc="$root.doClear"
                   />
                 </td>
               </tr>
@@ -101,12 +145,17 @@
 
     <div class="select-rect" ref="selectRect" style="display: none;"></div>
 
-    <div id="fix-menu">
+    <div id="fix-menu"
+      ref="fixMenu"
+      v-if="fixMenu.isShow"
+      :style="{left: fixMenu.style.l + 'px', top: fixMenu.style.t + 'px', 'z-index': r.dir.zIndex + 1}"
+    >
       <ul>
-        <li cmd="新建文件夹">新建文件夹</li>
-        <li cmd="上传文件">上传文件</li>
-        <li cmd="上传文件夹">上传文件夹</li>
-        <li cmd="粘贴">粘贴</li>
+        <li
+          v-for="(item, idx) in fixMenu.list"
+          :cmd="item"
+          @click="exec($event, item)"
+        >{{item}}</li>
       </ul>
     </div>
   </div>
@@ -119,18 +168,33 @@ export default {
     const r = vm.router
     
     return {
+      fixMenu: {
+        isShow: false,
+        style: {
+          l: 100,
+          t: 100,
+        },
+        list: []
+      },
       dir: {
-        new: {
-          path: '',
+        open: {
           isShow: false,
+          path: '',
+        },
+        new: {
+          isShow: false,
+          isDir: true,
+          isRename: false,
+          name: '',
         },
         map: {},
+        mapSelected: {},
       },
     }
   },
   methods: {
     correctPath(path) {
-      return (path + '/').replace(/(\\|\/)+/g, '/')
+      return path.replace(/(\\|\/)+/g, '/').replace(/\/$/, '')
     },
     async loopOpenDir() {
       const me = this
@@ -138,13 +202,18 @@ export default {
       const r = vm.router
       const list = r.dir.list
 
-      vm.oldTime = Date.now()
       for (let i = 0; i < list.length; i++) {
-        const path = list[i].path
         await new Promise((succ, err) => {
-          me.openDir(path, succ)
+          me.openDir(list[i].path, succ)
         })
       }
+    },
+    forceOpenDir(path) {
+      const me = this
+
+      path = path || me.curPath
+      me.dir.map = {}
+      me.loopOpenDir()
     },
     openDir(path, cb) {
       const me = this
@@ -161,7 +230,6 @@ export default {
         a: 'openDir',
         path,
       }, (list) => {
-        vm.oldTime = Date.now()
         dir.map[path] = list.sort((a, b) => {
           return b.isDir - a.isDir
         })
@@ -171,7 +239,7 @@ export default {
         cb && cb()
       })
     },
-    exec(action) {
+    exec(e, action) {
       const me = this
       const vm = me.$root
       const r = vm.router
@@ -179,11 +247,75 @@ export default {
 
       switch (action) {
         case '自动排版':
-          console.log('自动排版')
+          {
+            const dw = document.querySelector('.web-ftp .dir-list').clientWidth - 10
+            const col = Math.floor(dw / 350)
+            const size = parseInt(dw / col) - 10
+            let row = -1
+
+            vm.isRouterPush = true
+            r.dir.list.forEach((v, idx) => {
+              const style = v.style
+
+              idx % col === 0 && row++
+              style.width = style.height = size + 'px'
+              style.left = idx % col * (size + 10) + 10 + 'px'
+              style.top = row * (size + 10) + 10 + 'px'
+            })
+
+            me.$nextTick(() => {
+              vm.isRouterPush = false
+            })
+          }
+          break
+        case '新建文件夹':
+        case '新建文件':
+          if (me.curPath) {
+            e.stopPropagation()
+            dir.new.isShow = true
+            dir.new.isDir = action === '新建文件夹'
+            dir.new.isRename = false
+            dir.new.name = ''
+            dir.open.isShow = false
+            me.fixMenu.isShow = false
+          }
+          break
+        case '重命名':
+          e.stopPropagation()
+          dir.new.isShow = true
+          dir.new.isDir = true
+          dir.new.isRename = true
+          dir.new.name = me.oldLi.innerText
+          dir.open.isShow = false
+          me.fixMenu.isShow = false
+          break
+        case 'do操作文件(夹)':
+          {
+            let data = {}
+
+            if (!dir.new.isRename) {
+              data = {
+                a: (dir.new.isDir ? 'dir' : 'file') + 'Make',
+                path: me.correctPath(me.curPath + '/' + dir.new.name).replace(/\/$/, ''),
+              }
+            } else {
+
+            }
+
+            vm.get('./api/webFtp.php', data, (data) => {
+              me.$delete(me.dir.map, me.curPath)
+              me.forceOpenDir()
+              me.dir.new.isShow = false
+            })
+          }
           break
         case '打开文件夹':
-          // console.log('打开文件夹')
-          const path = me.correctPath(me.dir.new.path)
+          dir.new.isShow = false
+          dir.open.isShow = true
+          dir.open.path = ''
+          break
+        case 'do打开文件夹':
+          const path = me.correctPath(me.dir.open.path)
           vm.isRouterPush = true
           r.dir.list.push({
             path,
@@ -198,7 +330,7 @@ export default {
           })
           r.dir.cur = r.dir.list.length - 1
           me.openDir(path)
-          me.dir.new.isShow = 0
+          me.dir.open.isShow = 0
           break
         case '批量打开文件夹':
           {
@@ -216,13 +348,13 @@ export default {
               lis.forEach((li, idx, arr) => {
                 ++r.dir.zIndex
                 r.dir.list.splice(r.dir.cur + idx, 0, {
-                  path: delDir.path + li.children[1].innerHTML,
+                  path: me.correctPath(delDir.path + '/' + li.children[1].innerHTML),
                   k: r.dir.zIndex,
                   style: {
                     width: delDir.style.width,
                     height: delDir.style.height,
-                    left: pos.left + idx * 24 + 'px',
-                    top: pos.top + idx * 24 + 'px',
+                    left: pos.left + idx * 26 + 'px',
+                    top: pos.top + idx * 26 + 'px',
                     zIndex: r.dir.zIndex,
                   }
                 })
@@ -230,8 +362,8 @@ export default {
             }
           }
           break
-        case '新建文件夹':
-          console.log('新建文件夹')
+        case '操作文件(夹)':
+
           break
         case '全选':
           ;[].slice.call(document.querySelectorAll('.dir-list .cur .dir-list li')).forEach((li) => {
@@ -255,10 +387,19 @@ export default {
           }
           break
         case '删除':
-          console.log('删除')
-          break
-        case '重命名':
-          console.log('重命名')
+          {
+            const nodes = [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir:nth-child(' + (r.dir.cur + 1) + ') li[draggable=true] .file-name') || [])
+
+            vm.get('./api/webFtp.php', {
+              a: 'fileDelete',
+              path: me.curPath,
+              names: JSON.stringify(nodes.map((li) => {
+                return li.innerText
+              }))
+            }, (data) => {
+              me.forceOpenDir()
+            })
+          }
           break
         case '下载':
           console.log('下载')
@@ -272,10 +413,52 @@ export default {
         case '上传文件夹':
           console.log('上传文件夹')
           break
+        case '显示右键菜单':
+          {
+            const fixMenu = me.fixMenu
+            fixMenu.isShow = true
+            fixMenu.style.l = e.clientX
+            fixMenu.style.t = e.clientY
+            fixMenu.list = []
+
+            if (e.target.closest('[draggable=true]')) {
+              fixMenu.list = [
+                '打开',
+                '复制',
+                '剪切',
+                '删除',
+                '重命名',
+                '下载',
+              ]
+            } else {
+              fixMenu.list = [
+                '新建文件夹',
+                '新建文件',
+                '上传文件',
+                '上传文件夹',
+              ]
+            }
+
+            fixMenu.list.push('粘贴')
+
+            me.$nextTick(() => {
+              const node = me.$refs.fixMenu
+              const pos = node.getBoundingClientRect()
+              
+              if (pos.right > window.innerWidth) {
+                node.style.left = window.innerWidth - pos.width - 5 + 'px'
+              }
+
+              if (pos.bottom > window.innerHeight) {
+                node.style.top = window.innerHeight - pos.height - 5 + 'px'
+              }
+            })
+          }
+          break
+        default:
+          console.log('未处理的 action: ', action, e)
+          break
       }
-    },
-    handleContextmenu(e) {
-      console.log(e)
     },
     updateDirPath(e, dirItem) {
       const me = this
@@ -293,36 +476,61 @@ export default {
       const {webFtpEl, dirList, selectRect} = me.$refs
 
       dirList.onmousedown = (e) => {
-        const target = e.target
-        const fileList = target.closest('.file-list')
-        const grayTitle = target.closest('.gray-title')
-        const autoScroll = target.closest('.auto-scroll')
-        const resize = target.closest('.resize')
+        if (document.activeElement === e.target) return
 
-        const ctrlKey = e.ctrlKey
-        const shiftKey = e.shiftKey
+        let dirEl = e.target.closest('.dir')
+        const grayTitle = e.target.closest('.gray-title')
+        const fileList = e.target.closest('.file-list')
+        const resize = e.target.closest('.resize')
+        const autoScroll = dirEl.querySelector('.auto-scroll')
+        const lis = fileList ? [].slice.call(fileList.children).map((li) => {
+          return {
+            l: li.offsetLeft,
+            t: li.offsetTop,
+            r: li.offsetLeft + li.offsetWidth,
+            b: li.offsetTop + li.offsetHeight,
+            ctrlSign: e.ctrlKey ? li.draggable : undefined,
+            shiftSign: e.shiftKey ? li.draggable : undefined,
+            li,
+          }
+        }) : []
+
+        const pos = autoScroll.getBoundingClientRect()
         const x1 = e.clientX + webFtpEl.scrollLeft
         const y1 = e.clientY + webFtpEl.scrollTop
-
-        let dirEl = target.closest('.dir')
-        let originX = dirEl.offsetLeft
-        let originY = dirEl.offsetTop
-        let originW = dirEl.offsetWidth
-        let originH = dirEl.offsetHeight
+        const _x1 = e.clientX + autoScroll.scrollLeft - pos.left
+        const _y1 = e.clientY + autoScroll.scrollTop - pos.top
+        const originX = dirEl.offsetLeft
+        const originY = dirEl.offsetTop
+        const originW = dirEl.offsetWidth
+        const originH = dirEl.offsetHeight
+        let isMoved = false
         let rDir = {}
 
-        r.dir.cur = parseInt(dirEl.getAttribute('dir-index'))
+        me.fixMenu.isShow = false
+        r.dir.cur = parseInt(dirEl.getAttribute('dir-idx'))
         rDir = r.dir.list[r.dir.cur]
         rDir.style.zIndex = ++r.dir.zIndex
+        document.onmouseup = fnUp
 
-        if (grayTitle) {
+        if (e.target.closest('[draggable=true]')) {
+          me.oldLi = e.target.closest('li')
+        } else if (['glyphicon-file', 'file-name'].some(v => e.target.classList.contains(v))) {
+          fnUp({
+            clientX: e.clientX,
+            clientY: e.clientY,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            target: e.target,
+            which: 1,
+          })
+          e.target.closest('li').draggable = true
+        } else if (grayTitle) {
           startDrag()
         } else if (resize) {
           startResize()
         } else if (fileList) {
-          autoScroll.appendChild(selectRect)
-          selectRect.style.width = 
-          selectRect.style.height = 0
           startSelect()
         }
 
@@ -357,6 +565,7 @@ export default {
             dirEl.style.left = x + 'px'
             dirEl.style.top = y + 'px'
           }
+
           document.onmouseup = (e) => {
             document.onmousemove = document.onmouseup = null
             dirEl.style.transition = ''
@@ -367,7 +576,7 @@ export default {
         }
 
         function startResize() {
-          const sClass = target.className
+          const sClass = e.target.className
           const isL = sClass.indexOf('l') > -1
           const isT = sClass.indexOf('t') > -1
           const iMin = 300
@@ -435,156 +644,167 @@ export default {
 
         function startSelect() {
           e.preventDefault()
-
-          const lis = [].slice.call(fileList.children).map((li) => {
-            return {
-              l: li.offsetLeft,
-              t: li.offsetTop,
-              r: li.offsetLeft + li.offsetWidth,
-              b: li.offsetTop + li.offsetHeight,
-              ctrlSign: ctrlKey ? li.draggable : undefined,
-              shiftSign: shiftKey ? li.draggable : undefined,
-              li,
-            }
-          })
-          const pos = autoScroll.getBoundingClientRect()
-          let startX = e.clientX + autoScroll.scrollLeft - pos.left
-          let startY = e.clientY + autoScroll.scrollTop - pos.top
-          let isMoved = false
+          autoScroll.appendChild(selectRect)
+          selectRect.style.width = 
+          selectRect.style.height = 0
 
           document.onmousemove = fnMove
           document.onmouseup = fnUp
+        }
 
-          function fnMove(e) {
-            const x2 = e.clientX
-            const y2 = e.clientY
+        function fnMove(e) {
+          const x2 = e.clientX
+          const y2 = e.clientY
 
-            let endX = e.clientX + autoScroll.scrollLeft - pos.left
-            let endY = e.clientY + autoScroll.scrollTop - pos.top
+          const startX = _x1
+          const startY = _y1
+          const endX = x2 + autoScroll.scrollLeft - pos.left
+          const endY = y2 + autoScroll.scrollTop - pos.top
 
-            let l = Math.min(startX, endX)
-            let t = Math.min(startY, endY)
-            let w = Math.abs(startX - endX)
-            let h = Math.abs(startY - endY)
-            let r = l + w
-            let b = t + h
+          let l = Math.min(startX, endX)
+          let t = Math.min(startY, endY)
+          let w = Math.abs(startX - endX)
+          let h = Math.abs(startY - endY)
+          let r = l + w
+          let b = t + h
 
-            isMoved = x1 !== x2 || y1 !== y2
-            isMoved && (selectRect.style.display = '')
+          isMoved = x1 !== x2 || y1 !== y2
+          isMoved && (selectRect.style.display = '')
 
-            if (!isMoved) return
+          if (!isMoved) return
 
-            if (l < 0) {
-              w += l
-              l = 0
-            }
-
-            if (t < 0) {
-              h += t
-              t = 0
-            }
-
-            if (w > autoScroll.scrollWidth - l) {
-              w = autoScroll.scrollWidth - l
-            }
-
-            if (h > autoScroll.scrollHeight - t) {
-              h = autoScroll.scrollHeight - t
-            }
-
-            selectRect.style.left = l + 'px'
-            selectRect.style.top = t + 'px'
-            selectRect.style.width = w + 'px'
-            selectRect.style.height = h + 'px'
-
-            lis.forEach((v) => {
-              const li = v.li
-              const isColl = !(
-                v.l > r ||
-                v.r < l ||
-                v.t > b ||
-                v.b < t
-              )
-              if (e.ctrlKey) {
-                li.draggable = isColl ? !v.ctrlSign : v.ctrlSign
-              } else if (e.shiftKey) {
-                li.draggable = isColl || v.shiftSign
-                isColl && delete v.shiftSign
-              } else {
-                li.draggable = isColl
-              }
-            })
-
-            clearTimeout(vm.timerDirScroll)
-            const _e = {
-              clientX: e.clientX,
-              clientY: e.clientY,
-              ctrlKey: e.ctrlKey,
-              shiftKey: e.shiftKey,
-            }
-
-            if (e.clientY > pos.top && e.clientY < pos.bottom) {
-              return
-            }
-
-            {
-              const isScrollToTop = e.clientY < pos.top
-              let dis = isScrollToTop ? e.clientY - pos.top : e.clientY - pos.bottom
-
-              dis /= 5
-              dis = dis > 0 ? Math.ceil(dis) : Math.floor(dis)
-              autoScroll.scrollTop += dis
-
-              vm.timerDirScroll = setTimeout(() => {
-                fnMove(_e)
-              }, 13)
-            }
+          if (l < 0) {
+            w += l
+            l = 0
           }
 
-          function fnUp(e) {
-            const target = e.target
-            const li = target.closest('li')
+          if (t < 0) {
+            h += t
+            t = 0
+          }
 
-            document.onmousemove = document.onmouseup = null
-            dirEl.style.transition = ''
-            selectRect.style.display = 'none'
-            clearTimeout(vm.timerDirScroll)
+          if (w > autoScroll.scrollWidth - l) {
+            w = autoScroll.scrollWidth - l
+          }
 
-            if (isMoved) {
-              delete fileList.oldLi
+          if (h > autoScroll.scrollHeight - t) {
+            h = autoScroll.scrollHeight - t
+          }
+
+          selectRect.style.left = l + 'px'
+          selectRect.style.top = t + 'px'
+          selectRect.style.width = w + 'px'
+          selectRect.style.height = h + 'px'
+
+          lis.forEach((item) => {
+            const li = item.li
+            const isColl = !(
+              item.l > r ||
+              item.r < l ||
+              item.t > b ||
+              item.b < t
+            )
+            if (e.ctrlKey) {
+              li.draggable = isColl ? !item.ctrlSign : item.ctrlSign
+            } else if (e.shiftKey) {
+              li.draggable = isColl || item.shiftSign
+              isColl && delete item.shiftSign
             } else {
-              // 点选
-              if (e.ctrlKey) {
-                if (li) {
-                  li.draggable = !li.draggable
-                  fileList.oldLi = li
-                }
-              } else if (e.shiftKey) {
-                const startLi = fileList.oldLi || fileList.querySelector('[draggable=true]') || fileList.children[0]
-                const endLi = li
-
-                if (endLi) {
-                  const _idxStart = parseInt(startLi.getAttribute('data-idx'))
-                  const _idxEnd = parseInt(endLi.getAttribute('data-idx'))
-                  const idxStart = Math.min(_idxStart, _idxEnd)
-                  const idxEnd = Math.max(_idxStart, _idxEnd)
-
-                  lis.forEach((v, idx) => {
-                    v.li.draggable = idx >= idxStart && idx <= idxEnd
-                  })
-                }
-              } else {
-                lis.forEach((v) => {
-                  v.li.draggable = false
-                })
-                if (li) {
-                  li.closest('li').draggable = true
-                  fileList.oldLi = li
-                }
-              }
+              li.draggable = isColl
             }
+          })
+
+          clearTimeout(vm.timerDirScroll)
+          const _e = {
+            clientX: e.clientX,
+            clientY: e.clientY,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+          }
+
+          if (e.clientY > pos.top && e.clientY < pos.bottom) return
+
+          {
+            const isScrollToTop = e.clientY < pos.top
+            let dis = isScrollToTop ? e.clientY - pos.top : e.clientY - pos.bottom
+
+            dis /= 5
+            dis = dis > 0 ? Math.ceil(dis) : Math.floor(dis)
+            autoScroll.scrollTop += dis
+
+            vm.timerDirScroll = setTimeout(() => {
+              fnMove(_e)
+            }, 13)
           }
         }
+
+        function fnUp(e) {
+          const target = e.target
+          const li = target.closest('li')
+
+          document.onmousemove = document.onmouseup = null
+          dirEl.style.transition = ''
+          selectRect.style.display = 'none'
+          clearTimeout(vm.timerDirScroll)
+
+          switch (e.which) {
+            case 1:
+              if (isMoved) {
+                delete me.oldLi
+              } else {
+                // 点选
+                if (e.ctrlKey) {
+                  if (li) {
+                    li.draggable = !li.draggable
+                    me.oldLi = li
+                  }
+                } else if (e.shiftKey) {
+                  const startLi = me.oldLi || fileList.querySelector('[draggable=true]') || fileList.children[0]
+                  const endLi = li
+
+                  if (endLi) {
+                    const _idxStart = parseInt(startLi.getAttribute('data-idx'))
+                    const _idxEnd = parseInt(endLi.getAttribute('data-idx'))
+                    const idxStart = Math.min(_idxStart, _idxEnd)
+                    const idxEnd = Math.max(_idxStart, _idxEnd)
+
+                    lis.forEach((v, idx) => {
+                      v.li.draggable = idx >= idxStart && idx <= idxEnd
+                    })
+                  }
+                } else {
+                  lis.forEach((item, idx, arr) => {
+                    item.li.draggable = false
+                  })
+
+                  if (li) {
+                    li.draggable = true
+                    me.oldLi = li
+                  }
+                }
+              }
+              break
+            case 2:
+
+              break
+            case 3:
+
+              break
+          }
+
+          vm.$set(dir.mapSelected, me.curPath, dirEl.querySelectorAll('li[draggable=true]').length)
+        }
+      }
+
+      dirList.ondblclick = (e) => {
+        const li = e.target.closest('li')
+        const dirEl = e.target.closest('.dir')
+
+        if (!li) return
+
+        const rDir = r.dir.list[dirEl.getAttribute('dir-idx')]
+        vm.isRouterPush = true
+        rDir.path = me.correctPath(rDir.path + '/' + me.dir.map[rDir.path][li.getAttribute('data-idx')].name)
       }
 
       document.onkeydown = (e) => {
@@ -599,25 +819,7 @@ export default {
         } else if (e.ctrlKey && e.altKey) {
           switch (vm.keyMap[e.keyCode]) {
             case 'f':
-              {
-                const dw = document.querySelector('.web-ftp .dir-list').clientWidth - 10
-                const col = Math.floor(dw / 350)
-                const size = parseInt(dw / col) - 10
-                let row = -1
-
-                vm.isRouterPush = true
-                r.dir.list.forEach((v, idx) => {
-                  const style = v.style
-
-                  idx % col === 0 && row++
-                  style.width = style.height = size + 'px'
-                  style.left = idx % col * (size + 10) + 10 + 'px'
-                  style.top = row * (size + 10) + 10 + 'px'
-                })
-                setTimeout(() => {
-                  vm.isRouterPush = false
-                }, 2)
-              }
+              me.exec(e, '自动排版')
               break
           }
         } else if (e.shiftKey && e.altKey) {
@@ -642,11 +844,13 @@ export default {
           switch (vm.keyMap[e.keyCode]) {
             case 'd':
               e.preventDefault()
-              me.exec('选中路径')
+              me.exec(e, '选中路径')
+              break
+            case 'n':
+              me.exec(e, '新建文件夹')
               break
             case 'o':
-              dir.new.isShow = true
-              dir.new.path = ''
+              me.exec(e, '打开文件夹')
               break
             case 'w':
               vm.isRouterPush = true
@@ -658,7 +862,10 @@ export default {
         } else {
           switch (vm.keyMap[e.keyCode]) {
             case 'enter':
-              me.exec('批量打开文件夹')
+              me.exec(e, '批量打开文件夹')
+              break
+            case 'delete':
+              me.exec(e, '删除')
               break
           }
         }
@@ -668,18 +875,37 @@ export default {
   computed: {
     r() {
       return this.$root.router
-    }
-  },
-  watch: {
-    'dir.new.isShow'(newVal) {
-      const vm = this.$root
+    },
+    curPath() {
+      const me = this
+      const vm = me.$root
       const r = vm.router
       
-      if (!newVal) return
+      return (r.dir.list[r.dir.cur] || {}).path || ''
+    },
+  },
+  watch: {
+    '$root.router.dir.cur'(newVal) {
+      const me = this
+      const vm = me.$root
+      const r = vm.router
+      const len = r.dir.list.length
+      const cur = r.dir.cur
 
+      if (len === 0) return
+      !(cur >= 0 && cur < len) && (r.dir.cur = 0)
+    },
+    'dir.open.isShow'(newVal) {
+      if (!newVal) return
       this.$nextTick(() => {
         const node = document.querySelector('.mask-open-dir .inner .form-control')
-        console.log(node)
+        node && node.focus()
+      })
+    },
+    'dir.new.isShow'(newVal) {
+      if (!newVal) return
+      this.$nextTick(() => {
+        const node = document.querySelector('.mask-operate-dir .inner .form-control')
         node && node.focus()
       })
     },
@@ -694,7 +920,7 @@ export default {
     const me = this
     const vm = me.$root
     const r = vm.router
-    
+
     r.dir.zIndex = Math.max(r.dir.zIndex, r.dir.list.length)
     me.initEvents()
     me.loopOpenDir()
@@ -707,6 +933,7 @@ export default {
   background: #d3d6d9 !important;
   // &:focus {background: wheat !important;}
   .dir-list {
+    position: relative; z-index: 1;
     user-select: none;
     .dir {
       width: 400px; height: 400px;
@@ -795,7 +1022,6 @@ export default {
   #fix-menu {
     min-width: 80px; background: #fff; color: #555;
     white-space: nowrap;
-    display: none;
     position: fixed; left: 50px; top: 100px; z-index: 2;
     border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,.3);
     user-select: none;

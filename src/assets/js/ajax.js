@@ -64,7 +64,7 @@ export default {
           xhr.open('POST', url)
           const fm = new FormData()
           Object.keys(data).forEach((k, idx, arr) => {
-            fm.append(k, o[k])
+            fm.append(k, data[k])
           })
           xhr.send(fm)
           break
