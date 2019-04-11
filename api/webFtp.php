@@ -1,8 +1,9 @@
 <?php 
 require 'safe.php';
 
+// 下划线开头的变量，表示GBK编码
 $path = $_REQUEST['path'];
-$_path = iconv('UTF-8', 'GBK', $path);
+$_path = toGBK($path);
 
 switch ($_REQUEST['a']) {
   case 'openDir':
@@ -23,47 +24,83 @@ switch ($_REQUEST['a']) {
       $result[] = [
         'isDir' => is_dir($_fullPath),
         'mtime' => filemtime($_fullPath),
-        'name' => iconv('GBK', 'UTF-8', $_fileName),
+        'name' => toUtf8($_fileName),
       ];
     }
 
     res($result);
     break;
-  case 'dirMake':
-    $_pathArr = explode('/', $_path);
-    $_path = '';
+  case 'makeDir':
+    $_names = explode('/', toGBK($_REQUEST['name']));
 
-    foreach ($_pathArr as $key => $value) {
-      $arr = explode('|', $value);
-      foreach ($arr as $key => $value2) {
-        $_tmp = $_path.$value2;
-        if (!is_dir($_tmp)) {
-          mkdir($_tmp);
+    foreach ($_names as $key => $_value) {
+      if (!$_value) continue;
+      $arr = explode('|', $_value);
+      foreach ($arr as $key => $_value2) {
+        $_tmpPath = $_path.'/'.$_value2;
+        if (!is_dir($_tmpPath)) {
+          mkdir($_tmpPath);
         }
       }
-      $_path .= $arr[0].'/';
+      $_path .= '/'.end($arr);
     }
 
     err(0, '目录创建成功');
     break;
-  case 'fileMake':
+  case 'makeFile':
+    $_names = explode('|', toGBK($_REQUEST['name']));
 
+    foreach ($_names as $key => $_value) {
+      $_tmpPath = $_path.'/'.$_value;
+      if (!file_exists($_tmpPath)) {
+        file_put_contents($_tmpPath, '');
+      }
+    }
+
+    err(0, '文件创建成功');
     break;
-  case 'dirRename':
-    echo 'dirRename';
-    print_r($_REQUEST);
-    break;
-  case 'fileRename':
-    echo 'fileRename';
-    print_r($_REQUEST);
+  case 'rename':
+    $_names = json_decode($_REQUEST['names'], true);
+    foreach ($_names as $key => $value) {
+      $_names[$key] = toGBK($value);
+    }
+    $_newName = toGBK($_REQUEST['newName']);
+    $_dirFrom = toGBK($_REQUEST['dirFrom']);
+    $_dirTo = toGBK($_REQUEST['dirTo']);
+
+    if (count($_names) === 1) {
+      $_pathFrom = $_dirFrom.'/'.$_names[0];
+      $_pathTo = $_dirTo.'/'.$_newName;
+
+      print_r([
+        'type' => 'single',
+        '$_pathFrom' => $_pathFrom,
+        '$_pathTo' => $_pathTo,
+      ]);
+    } else {
+      foreach ($_names as $key => $_value) {
+        $_pathFrom = $_dirFrom.'/'.$_value;
+        $_fromFileType = getFileType($_pathFrom);
+        $_pathTo = $_dirTo.'/'.$_value.'('.$key.')'.($_fromFileType ? '.'.$_fromFileType : '');
+        
+        print_r([
+          'type' => 'mutiple',
+          '$_pathFrom' => $_pathFrom,
+          '$_pathTo' => $_pathTo,
+        ]);
+      }
+    }
+
+    err(0, '操作成功');
     break;
   case 'fileDelete':
     $names = json_decode($_REQUEST['names'], true);
-
     foreach ($names as $key => $value) {
-      rm($_path.'/'.iconv('UTF-8', 'GBK', $value));
+      $_tmpPath = $_path.'/'.toGBK($value);
+      if (file_exists($_tmpPath)) {
+        rm($_tmpPath);
+      }
     }
-
     err(0, '删除成功');
     break;
 }

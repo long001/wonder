@@ -2,8 +2,7 @@
 error_reporting(1);
 header('Content-Type: text/html; Charset=utf-8');
 
-// define(isLocal, $_SERVER['SERVER_NAME'] === '172.20.10.5');
-define(isLocal, true);
+define('isLocal', $_SERVER['SERVER_NAME'] === '10.0.1.2');
 
 if (isLocal) {
   header('Access-Control-Allow-Origin: *');

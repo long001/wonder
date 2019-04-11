@@ -88,7 +88,7 @@
                   <input type="text" class="form-control" required 
                     placeholder="打开文件夹"
                     v-model="dir.open.path"
-                    @keydown.stop.esc="$root.doClear"
+                    @keydown.stop="keyMap[$event.keyCode] === 'esc' && $root.doClear();"
                   />
                 </td>
               </tr>
@@ -128,7 +128,7 @@
                   <input type="text" class="form-control" required 
                     placeholder="名称"
                     v-model="dir.new.name"
-                    @keydown.stop.esc="$root.doClear"
+                    @keydown.stop="keyMap[$event.keyCode] === 'esc' && $root.doClear();"
                   />
                 </td>
               </tr>
@@ -210,9 +210,16 @@ export default {
     },
     forceOpenDir(path) {
       const me = this
+      const dir = me.dir
 
       path = path || me.curPath
-      me.dir.map = {}
+
+      Object.keys(me.dir.map).forEach((_path) => {
+        if (_path.indexOf(path) === 0) {
+          me.$delete(me.dir.map, _path)
+        }
+      })
+
       me.loopOpenDir()
     },
     openDir(path, cb) {
@@ -285,21 +292,34 @@ export default {
           dir.new.isShow = true
           dir.new.isDir = true
           dir.new.isRename = true
-          dir.new.name = me.oldLi.innerText
+          dir.new.name = document.querySelector('.web-ftp .dir-list .dir.cur li[draggable=true] .file-name').innerText
           dir.open.isShow = false
           me.fixMenu.isShow = false
+          me.$nextTick(() => {
+            const node = document.querySelector('.mask-operate-dir .form-control')
+            node.focus()
+            node.select()
+          })
           break
         case 'do操作文件(夹)':
           {
             let data = {}
 
             if (!dir.new.isRename) {
+              // 新建
               data = {
-                a: (dir.new.isDir ? 'dir' : 'file') + 'Make',
-                path: me.correctPath(me.curPath + '/' + dir.new.name).replace(/\/$/, ''),
+                a: 'make' + (dir.new.isDir ? 'Dir' : 'File'),
+                path: me.curPath,
+                name: dir.new.name,
               }
             } else {
-
+              // 重命名
+              data = {
+                names: [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir.cur li[draggable=true] .file-name')),
+                newName: '',
+                dirFrom: '',
+                dirTo: '',
+              }
             }
 
             vm.get('./api/webFtp.php', data, (data) => {
@@ -334,8 +354,8 @@ export default {
           break
         case '批量打开文件夹':
           {
-            const dirEl = document.querySelector('.dir-list .cur')
-            const lis = [].slice.call(document.querySelectorAll('.dir-list .cur [is-dir=true][draggable=true]'))
+            const dirEl = document.querySelector('.web-ftp .dir.cur')
+            const lis = [].slice.call(document.querySelectorAll('.web-ftp .dir.cur [is-dir=true][draggable=true]'))
 
             if (lis.length > 0) {
               const delDir = r.dir.list.splice(r.dir.cur, 1)[0]
@@ -366,9 +386,11 @@ export default {
 
           break
         case '全选':
-          ;[].slice.call(document.querySelectorAll('.dir-list .cur .dir-list li')).forEach((li) => {
-            li.draggable = true
-          })
+          if (document.activeElement.nodeName.toLowerCase() !== 'input') {
+            ;[].slice.call(document.querySelectorAll('.web-ftp .dir.cur .file-list li')).forEach((li) => {
+              li.draggable = true
+            })
+          }
           break
         case '复制':
           console.log('复制')
@@ -381,14 +403,14 @@ export default {
           break
         case '选中路径':
           {
-            const node = document.querySelector('.dir-list section:nth-child(' + (r.dir.cur + 1) + ') .path-input')
+            const node = document.querySelector('.web-ftp .dir.cur .path-input')
             node.focus()
             node.select()
           }
           break
         case '删除':
           {
-            const nodes = [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir:nth-child(' + (r.dir.cur + 1) + ') li[draggable=true] .file-name') || [])
+            const nodes = [].slice.call(document.querySelectorAll('.web-ftp .dir.cur li[draggable=true] .file-name') || [])
 
             vm.get('./api/webFtp.php', {
               a: 'fileDelete',
@@ -477,6 +499,7 @@ export default {
 
       dirList.onmousedown = (e) => {
         if (document.activeElement === e.target) return
+        document.activeElement.blur()
 
         let dirEl = e.target.closest('.dir')
         const grayTitle = e.target.closest('.gray-title')
@@ -829,11 +852,7 @@ export default {
         } else if (e.ctrlKey) {
           switch (vm.keyMap[e.keyCode]) {
             case 'a':
-              if (document.activeElement.nodeName.toLowerCase() !== 'input') {
-                ;[].slice.call(document.querySelectorAll('.dir-list .cur li')).forEach((li, idx, arr) => {
-                  li.draggable = true
-                })
-              }
+              me.exec(e, '全选')
               break
           }
         } else if (e.shiftKey) {
@@ -855,8 +874,7 @@ export default {
             case 'w':
               vm.isRouterPush = true
               r.dir.list.splice(r.dir.cur, 1)
-              r.dir.cur--
-              r.dir.cur < 0 && (r.dir.cur = 0)
+              !(r.dir.cur >= 0 && r.dir.cur < r.dir.list.length) && (r.dir.cur = 0)
               break
           }
         } else {
@@ -866,6 +884,9 @@ export default {
               break
             case 'delete':
               me.exec(e, '删除')
+              break
+            case 'f2':
+              me.exec(e, '重命名')
               break
           }
         }
@@ -883,6 +904,9 @@ export default {
       
       return (r.dir.list[r.dir.cur] || {}).path || ''
     },
+    keyMap() {
+      return this.$root.keyMap
+    }
   },
   watch: {
     '$root.router.dir.cur'(newVal) {
@@ -954,6 +978,7 @@ export default {
           &:focus {
             border-color: #ccc;
             background: #fff;
+            cursor: text;
           }
         }
         .fr {

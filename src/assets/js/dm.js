@@ -12,8 +12,7 @@ export default {
     return {
       lenAni: 30,
       // localUrl: 'http://192.168.10.103/wonder/',
-      // localUrl: 'http://172.20.10.5/wonder/',
-      localUrl: 'http://localhost/wonder/',
+      localUrl: 'http://10.0.1.2/wonder/',
       dw: window.innerWidth,
       dh: window.innerHeight,
       is: {
@@ -40,6 +39,7 @@ export default {
         '80': 'p', '81': 'q', '82': 'r', '83': 's', '84': 't',
         '85': 'u', '86': 'v', '87': 'w', '88': 'x', '89': 'y',
         '90': 'z', 
+        '113': 'f2',
       },
       ex: {},
       router: {
