@@ -1,66 +1,93 @@
 <template>
-  <div class="web-ftp" ref="webFtpEl">
-    <div class="dir-list"
-      ref="dirList"
-      @contextmenu.prevent="exec($event, '显示右键菜单')"
-    >
-      <section
-        v-for="(dirItem, idx) in r.dir.list"
-        :key="dirItem.k"
-        :data-key="dirItem.k"
-        :dir-idx="idx"
-        :class="['dir', {cur: idx === r.dir.cur}]"
-        :style="dirItem.style"
+  <div class="web-ftp flex-layout" ref="webFtpEl">
+    <div class="gray-title">
+      <div class="fr btn-box">
+        <span class="btn btn-primary btn-xs"
+          @click.stop="exec($event, '打开文件夹')"
+        >打开文件夹</span>
+        <span class="btn btn-primary btn-xs"
+          @click="exec($event, '自动排版')"
+        >自动排版</span>
+        <span class="btn btn-danger btn-xs"
+          :disabled="!dir.mapSelected[curPath]"
+          @click="exec($event, '删除')"
+        >删除</span>
+      </div>
+      <div class="ellipsis">
+        <div class="ib p">
+          <i class="glyphicon glyphicon-info-sign" style="top: 2px;"></i>
+          <span>快捷操作</span>
+        </div>
+      </div>
+    </div>
+    <div class="auto-flex">
+      <div class="dir-list"
+        ref="dirList"
+        @contextmenu.prevent="exec($event, '显示右键菜单')"
+        @dragstart="handleDragStart"
+        @dragover.prevent
+        @drop.prevent="handleDrop"
       >
-        <div class="lmr gray-title">
-          <div class="fr">
-            <span v-if="(dir.map[dirItem.path] || []).length > 0">
-              {{dir.mapSelected[dirItem.path] || 0}} / 
-              {{(dir.map[dirItem.path] || []).length}}
-            </span>
-            <i class="glyphicon glyphicon-pencil"></i>
-            <i class="glyphicon glyphicon-remove"></i>
+        <section
+          v-for="(dirItem, idx) in r.dir.list"
+          :key="dirItem.k"
+          :data-key="dirItem.k"
+          :dir-idx="idx"
+          :class="['dir', {cur: idx === r.dir.cur}]"
+          :style="dirItem.style"
+        >
+          <div class="lmr gray-title">
+            <div class="fr">
+              <span v-if="(dir.map[dirItem.path] || []).length > 0">
+                {{dir.mapSelected[dirItem.path] || 0}} / 
+                {{(dir.map[dirItem.path] || []).length}}
+              </span>
+              <i class="glyphicon glyphicon-pencil"></i>
+              <i class="glyphicon glyphicon-remove"
+                @click="exec($event, '关闭面板')"
+              ></i>
+            </div>
+            <div class="mid path-box">
+              <input type="text" class="path-input" 
+                :value="dirItem.path"
+                @keydown.stop.enter="updateDirPath($event, dirItem)"
+              >
+            </div>
           </div>
-          <div class="mid path-box">
-            <input type="text" class="path-input" 
-              :value="dirItem.path"
-              @keydown.stop.enter="updateDirPath($event, dirItem)"
+          <div class="auto-scroll">
+            <div class="space"
+              v-if="(dir.map[dirItem.path] || {}).msg"
             >
+              <div class="alert alert-danger">{{dir.map[dirItem.path].msg}}</div>
+            </div>
+            <ul class="file-list" v-else>
+              <li
+                class="file"
+                v-for="(item, idx) in dir.map[dirItem.path]"
+                :data-idx="idx"
+                :is-dir="item.isDir"
+              >
+                <i class="glyphicon glyphicon-file"></i>
+                <div class="file-name">{{item.name}}</div>
+              </li>
+            </ul>
           </div>
-        </div>
-        <div class="auto-scroll">
-          <div class="space"
-            v-if="(dir.map[dirItem.path] || {}).msg"
-          >
-            <div class="alert alert-danger">{{dir.map[dirItem.path].msg}}</div>
+          <div class="resize">
+            <div class="line">
+              <div class="l"></div>
+              <div class="t"></div>
+              <div class="r"></div>
+              <div class="b"></div>
+            </div>
+            <div class="corner">
+              <div class="lt"></div>
+              <div class="rt"></div>
+              <div class="rb"></div>
+              <div class="lb"></div>
+            </div>
           </div>
-          <ul class="file-list" v-else>
-            <li
-              class="file"
-              v-for="(item, idx) in dir.map[dirItem.path]"
-              :data-idx="idx"
-              :is-dir="item.isDir"
-            >
-              <i class="glyphicon glyphicon-file"></i>
-              <div class="file-name">{{item.name}}</div>
-            </li>
-          </ul>
-        </div>
-        <div class="resize">
-          <div class="line">
-            <div class="l"></div>
-            <div class="t"></div>
-            <div class="r"></div>
-            <div class="b"></div>
-          </div>
-          <div class="corner">
-            <div class="lt"></div>
-            <div class="rt"></div>
-            <div class="rb"></div>
-            <div class="lb"></div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
 
     <transition name="fade">
@@ -94,6 +121,14 @@
               </tr>
               <tr>
                 <td>
+                  <span class="ib" style="margin-right: 15px;">自动转换 。->. OR 、->/</span>
+                  <toggle
+                    v-model="r.dir.isChangeChinese"
+                  ></toggle>
+                </td>
+              </tr>
+              <tr>
+                <td>
                   <input type="submit" value="确定" class="btn btn-success btn-block" />
                 </td>
               </tr>
@@ -105,6 +140,7 @@
 
     <transition name="fade">
       <div class="mask mask-operate-dir"
+        style="user-select: none;" 
         v-if="dir.new.isShow"
         @click="dir.new.isShow = false"
       >
@@ -130,6 +166,14 @@
                     v-model="dir.new.name"
                     @keydown.stop="keyMap[$event.keyCode] === 'esc' && $root.doClear();"
                   />
+                </td>
+              </tr>
+              <tr v-if="dir.new.isRename">
+                <td>
+                  <span class="ib" style="margin-right: 15px;">修改后缀</span>
+                  <toggle
+                    v-model="r.dir.isUpdateExtension"
+                  ></toggle>
                 </td>
               </tr>
               <tr>
@@ -185,6 +229,7 @@ export default {
           isShow: false,
           isDir: true,
           isRename: false,
+          isFileMove: false,
           name: '',
         },
         map: {},
@@ -193,8 +238,51 @@ export default {
     }
   },
   methods: {
+    handleDragStart(e) {
+      const me = this
+      const root = me.$root
+      const r = root.router
+      const dirEl = e.target.closest('.dir')
+      const dir = me.dir
+
+      if (!dirEl) return
+
+      dir.new.isFileMove = true
+      dir.new.dirFrom = me.curPath
+    },
+    handleDrop(e) {
+      const me = this
+      const root = me.$root
+      const r = root.router
+      const dir = me.dir
+      const dirEl = e.target.closest('.dir')
+
+      if (!dirEl) return
+
+      dir.new.dirTo = r.dir.list[dirEl.getAttribute('dir-idx')].path
+      // console.log(dir.new.dirFrom)
+      // console.log(dir.new.dirTo)
+      // return
+      if (dir.new.isFileMove) {
+        dir.new.isRename = true
+        me.exec(e, 'do操作文件(夹)')
+      } else {
+        console.log('文件上传')
+      }
+
+      dir.new.isFileMove = false
+    },
+    getSelectedFiles() {
+      return [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir.cur li[draggable=true] .file-name')).map(n => n.innerText.trim())
+    },
     correctPath(path) {
-      return path.replace(/(\\|\/)+/g, '/').replace(/\/$/, '')
+      const me = this
+      const root = me.$root
+      const r = root.router
+      
+      r.dir.isChangeChinese && (path = path.replace('。', '.').replace('、', '/'))
+      path = path.replace(/(\\|\/)+/g, '/').replace(/\/$/, '')
+      return path
     },
     async loopOpenDir() {
       const me = this
@@ -237,9 +325,34 @@ export default {
         a: 'openDir',
         path,
       }, (list) => {
-        dir.map[path] = list.sort((a, b) => {
-          return b.isDir - a.isDir
+        const dirs = []
+        let group = {}
+
+        list.forEach((item, idx, arr) => {
+          item.type = vm.getFileType(item.name)
+
+          if (item.isDir) {
+            dirs.push(item)
+          } else {
+            group[item.type] = group[item.type] || []
+            group[item.type].push(item)
+          }
         })
+
+        dirs.sort((a, b) => {
+          return a.name.localeCompare(b.name)
+        })
+
+        group = Object.keys(group).map((type) => {
+          return {
+            type,
+            arr: group[type].sort((a, b) => {
+              return a.name.localeCompare(b.name)
+            })
+          }
+        }).sort((a, b) => a.type.localeCompare(b.type)).map(v => v.arr)
+
+        dir.map[path] = dirs.concat(Array.prototype.concat.apply([], group))
         cb && cb()
       }, (xhr, data) => {
         vm.$set(dir.map, path, data)
@@ -288,18 +401,26 @@ export default {
           }
           break
         case '重命名':
-          e.stopPropagation()
-          dir.new.isShow = true
-          dir.new.isDir = true
-          dir.new.isRename = true
-          dir.new.name = document.querySelector('.web-ftp .dir-list .dir.cur li[draggable=true] .file-name').innerText
-          dir.open.isShow = false
-          me.fixMenu.isShow = false
-          me.$nextTick(() => {
-            const node = document.querySelector('.mask-operate-dir .form-control')
-            node.focus()
-            node.select()
-          })
+          {
+            const node = document.querySelector('.web-ftp .dir.cur li[draggable=true] .file-name')
+
+            if (node) {
+              e.stopPropagation()
+              dir.new.isShow = true
+              dir.new.isDir = true
+              dir.new.isRename = true
+              dir.new.name = node.innerText
+              dir.open.isShow = false
+              me.fixMenu.isShow = false
+              me.$nextTick(() => {
+                const node = document.querySelector('.mask-operate-dir .form-control')
+                node.focus()
+                node.value.indexOf('.') > -1 ?
+                node.setSelectionRange(0, node.value.lastIndexOf('.')) :
+                node.select()
+              })
+            }
+          }
           break
         case 'do操作文件(夹)':
           {
@@ -315,19 +436,32 @@ export default {
             } else {
               // 重命名
               data = {
-                names: [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir.cur li[draggable=true] .file-name')),
-                newName: '',
-                dirFrom: '',
-                dirTo: '',
+                a: 'rename',
+                names: JSON.stringify(me.getSelectedFiles()),
+                newName: dir.new.name,
+                dirFrom: dir.new.dirFrom || me.curPath,
+                dirTo: dir.new.dirTo || me.curPath,
+                isRename: true,
               }
             }
 
+            r.dir.isUpdateExtension && (data.isUpdateExtension = true)
+            me.$delete(dir.map, dir.new.dirFrom)
+            me.$delete(dir.map, dir.new.dirTo)
+            dir.new.dirFrom = dir.new.dirTo = ''
+
+            if (vm.is.loading) return
+            vm.is.loading = true
             vm.get('./api/webFtp.php', data, (data) => {
+              vm.is.loading = false
               me.$delete(me.dir.map, me.curPath)
               me.forceOpenDir()
               me.dir.new.isShow = false
             })
           }
+          break
+        case '打开':
+          console.log('打开')
           break
         case '打开文件夹':
           dir.new.isShow = false
@@ -355,7 +489,7 @@ export default {
         case '批量打开文件夹':
           {
             const dirEl = document.querySelector('.web-ftp .dir.cur')
-            const lis = [].slice.call(document.querySelectorAll('.web-ftp .dir.cur [is-dir=true][draggable=true]'))
+            const lis = [].slice.call(document.querySelectorAll('.web-ftp .dir.cur li[is-dir=true][draggable=true]'))
 
             if (lis.length > 0) {
               const delDir = r.dir.list.splice(r.dir.cur, 1)[0]
@@ -410,14 +544,14 @@ export default {
           break
         case '删除':
           {
-            const nodes = [].slice.call(document.querySelectorAll('.web-ftp .dir.cur li[draggable=true] .file-name') || [])
+            const names = me.getSelectedFiles()
+
+            if (names.length === 0) return
 
             vm.get('./api/webFtp.php', {
               a: 'fileDelete',
               path: me.curPath,
-              names: JSON.stringify(nodes.map((li) => {
-                return li.innerText
-              }))
+              names: JSON.stringify(names)
             }, (data) => {
               me.forceOpenDir()
             })
@@ -466,7 +600,7 @@ export default {
             me.$nextTick(() => {
               const node = me.$refs.fixMenu
               const pos = node.getBoundingClientRect()
-              
+
               if (pos.right > window.innerWidth) {
                 node.style.left = window.innerWidth - pos.width - 5 + 'px'
               }
@@ -476,6 +610,11 @@ export default {
               }
             })
           }
+          break
+        case '关闭面板':
+          vm.isRouterPush = true
+          r.dir.list.splice(r.dir.cur, 1)
+          !(r.dir.cur >= 0 && r.dir.cur < r.dir.list.length) && (r.dir.cur = 0)
           break
         default:
           console.log('未处理的 action: ', action, e)
@@ -862,7 +1001,7 @@ export default {
         } else if (e.altKey) {
           switch (vm.keyMap[e.keyCode]) {
             case 'd':
-              e.preventDefault()
+              r.dir.list.length > 0 && e.preventDefault()
               me.exec(e, '选中路径')
               break
             case 'n':
@@ -872,9 +1011,7 @@ export default {
               me.exec(e, '打开文件夹')
               break
             case 'w':
-              vm.isRouterPush = true
-              r.dir.list.splice(r.dir.cur, 1)
-              !(r.dir.cur >= 0 && r.dir.cur < r.dir.list.length) && (r.dir.cur = 0)
+              me.exec(e, '关闭面板')
               break
           }
         } else {

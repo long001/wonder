@@ -38,10 +38,14 @@ export default {
       const method = (o.method || 'GET').toUpperCase()
       const data = o.data || {}
       let url = o.url
+      const extension = vm.getFileType(url)
 
-      url = /^http/.test(url) ? url : (vm.is.local ? vm.localUrl + url.replace(/^\.\//, '') : url)
+      if (vm.is.local && ['php'].some(v => v === extension)) {
+        url = vm.localUrl + url.replace(/^\.\//, '', '')
+      }
 
       function fail(data) {
+        vm.is.loading = false
         o.fail && o.fail(xhr, data)
       }
 

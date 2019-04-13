@@ -596,8 +596,7 @@ export default {
     const vm = this.$root
     const r = vm.router
     
-    // vm.get('./static/data/cctv.json', {
-    vm.get(vm.is.local ? './api/pub.php' : './static/data/cctv.json', {
+    vm.get('./static/data/cctv.json', {
       a: 'getCCTVBasicInfo'
     }, (data) => {
       vm.cctv.channel.list = data

@@ -30,6 +30,8 @@ export default {
         r.totalPage = parseInt(r.totalPage || 0)
       }
       r.dir = r.dir || {}
+      r.dir.isUpdateExtension = r.dir.isUpdateExtension || false
+      r.dir.isChangeChinese = r.dir.isChangeChinese || r.dir.isChangeChinese === undefined
       r.dir.cur = r.dir.cur || 0
       r.dir.zIndex = r.dir.zIndex || 0
       r.dir = r.dir || {}

@@ -190,7 +190,20 @@ Vue.component('confirm', {
   }
 })
 
-// setTimeout(() => {
-//   vm.confirm('a')
-//   vm.alert('a')
-// }, 0)
+Vue.component('toggle', {
+  template: `
+    <div
+      :class="['toggle', {on: value}]"
+      @click="$emit('change', !value)"
+    >
+      <div class="circle"></div>
+    </div>
+  `,
+  props: {
+    value: Boolean,
+  },
+  model: {
+    prop: 'value',
+    event: 'change',
+  }
+})

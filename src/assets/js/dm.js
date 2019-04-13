@@ -4,14 +4,13 @@ export default {
   rootData() {
     const vm = this.$root
     const ua = navigator.userAgent
-    const isLocal = ['localhost', '808'].some(k => location.origin.indexOf(k) > -1)
+    const isLocal = location.port === '6835'
     const isIos = ua.indexOf('like Mac OS X') > -1
     const isAndroid = ua.indexOf('Android') > -1
     const isWin = ua.indexOf('Windows NT') > -1
 
     return {
       lenAni: 30,
-      // localUrl: 'http://192.168.10.103/wonder/',
       localUrl: 'http://10.0.1.2/wonder/',
       dw: window.innerWidth,
       dh: window.innerHeight,
@@ -49,6 +48,7 @@ export default {
         dir: {
           cur: 0,
           zIndex: 0,
+          isUpdateExtension: false,
           list: [],
         },
       },
@@ -66,6 +66,14 @@ export default {
   rootMethods: {
     clone(o) {
       return JSON.parse(JSON.stringify(o))
+    },
+    getFileName(path) {
+      path = path.split('/').last()
+      return path.substr(0, path.lastIndexOf('.')) || ''
+    },
+    getFileType(path) {
+      path = path.split('/').last()
+      return path.substr(path.lastIndexOf('.') + 1) || ''
     },
     alert(msg, cb) {
       const vm = this.$root

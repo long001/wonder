@@ -13,6 +13,10 @@
   return this
 })
 
+Array.prototype.last = function() {
+  return this[this.length - 1]
+};
+
 Date.prototype.format = function(format) {
   const o = {
     y: this.getFullYear(),
