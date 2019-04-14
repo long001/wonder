@@ -64,6 +64,9 @@ export default {
     }
   },
   rootMethods: {
+    log() {
+      console.log(arguments)
+    },
     clone(o) {
       return JSON.parse(JSON.stringify(o))
     },

@@ -17,11 +17,9 @@ function whyFsOperateError($path) {
 function rm($path) {
   if (is_dir($path)) {
     $handler = opendir($path);
-    while ($filename = readdir($handler)) {
-      if ($filename === '.' || $filename === '..') {
-        continue;
-      }
-      rm($path.'/'.$filename);
+    while ($fileName = readdir($handler)) {
+      if ($fileName === '.' || $fileName === '..') continue;
+      rm($path.'/'.$fileName);
     }
     closedir($handler);
     rmdir($path);
@@ -34,11 +32,11 @@ function rm($path) {
 function mkPath($path) {
   $path = preg_replace('/((\\\)|(\/))+/', '/', $path.'/');
   $path = preg_replace('/\/$/', '', $path);
-  $arrPath = split('/', $path);
+  $pathArr = split('/', $path);
   $path = '';
 
-  foreach ($arrPath as $key => $value) {
-    $path .= '/'.$value;
+  foreach ($pathArr as $key => $value) {
+    $path .= $value.'/';
     if (!is_dir($path)) {
       mkdir($path) or die(whyFsOperateError($path));
     }
@@ -46,27 +44,28 @@ function mkPath($path) {
 }
 
 // 递归拷贝
-function cpDir($dirFrom, $dirTo) {
+function cp($dirFrom, $dirTo) {
   if (is_dir($dirFrom)) {
+    mkdir($dirTo);
     $handler = opendir($dirFrom);
-    mkPath($dirTo);
-
-    while ($filename = readdir($handler)) {
-      if ($filename === '.' || $filename === '..') {
-        continue;
-      }
-
-      $from = $dirFrom.'/'.$filename;
-      $to = $dirTo.'/'.$filename;
-      
-      if (is_dir($from)) {
-        cpDir($from, $to);
-      } else {
-        copy($from, $to);
-      }
+    while ($fileName = readdir($handler)) {
+      if ($fileName === '.' || $fileName === '..') continue;
+      $from = $dirFrom.'/'.$fileName;
+      $to = $dirTo.'/'.$fileName;
+      is_dir($from) ? cp($from, $to) : copy($from, $to);
     }
     closedir($handler);
   } else {
     copy($dirFrom, $dirTo);
   }
+}
+
+function getFileName($path) {
+  $path = end(explode('/', $path));
+  return strpos($path, '.') > -1 ? substr($path, 0, strrpos($path, '.')) : 'no getFileName';
+}
+
+function getFileType($path) {
+  $path = end(explode('/', $path));
+  return strpos($path, '.') > -1 ? substr($path, strrpos($path, '.') + 1) : 'no getFileType';
 }

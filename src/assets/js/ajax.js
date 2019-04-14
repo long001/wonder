@@ -11,10 +11,10 @@ export default {
 
       if (data.code) {
         switch (data.code) {
-          case '1':
+          case 1:
             console.log(data.msg)
             break
-          case '2':
+          case 2:
             vm.alert(data.msg)
             break
           default:

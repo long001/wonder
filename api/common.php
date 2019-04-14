@@ -24,12 +24,10 @@ function toUtf8($str) {
   return iconv('GBK', 'UTF-8', $str);
 }
 
-function getFileName($path) {
-  preg_match_all('/(?:\.)([^.]*)$/', $path, $result);
-  return count($result) >= 2 ? $result[1][0] : '';
+function n() {
+  echo "\n";
 }
 
-function getFileType($path) {
-  $arr = explode('.', basename($path));
-  return count($arr) > 1 ? end($arr) : '';
+function br() {
+  echo '<br>';
 }
