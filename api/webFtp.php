@@ -37,7 +37,7 @@ switch ($_REQUEST['a']) {
   case 'makeDir':
     $names = explode('/', $_REQUEST['name']);
 
-    if (strpos($path, './test') !== 0) err(2, '只能在 ./test 创建文件夹');
+    // if (strpos($path, './test') !== 0) err(2, '只能在 ./test 创建文件夹');
 
     foreach ($names as $key => $value) {
       $value = trim($value);
@@ -61,7 +61,7 @@ switch ($_REQUEST['a']) {
   case 'makeFile':
     $names = explode('|', $_REQUEST['name']);
 
-    if (strpos($path, './test') !== 0) err(2, '只能在 ./test 创建文件');
+    // if (strpos($path, './test') !== 0) err(2, '只能在 ./test 创建文件');
 
     foreach ($names as $key => $value) {
       $value = trim($value);
@@ -81,25 +81,26 @@ switch ($_REQUEST['a']) {
     $dirFrom = $_REQUEST['dirFrom'];
     $dirTo = $_REQUEST['dirTo'];
     $isUpdateExtension = $_REQUEST['isUpdateExtension'];
+    $fn = $_REQUEST['isCopy'] ? cp : rename;
 
-    if (
-      strpos($dirFrom, './test') !== 0 ||
-      strpos($dirTo, './test') !== 0
-    ) err(2, '只能 rename ./test 目录下的文件');
+    // if (
+    //   strpos($dirFrom, './test') !== 0 ||
+    //   strpos($dirTo, './test') !== 0
+    // ) err(2, '只能 rename ./test 目录下的文件');
 
     if ($isFileMove) {
       // 文件移动
       foreach ($names as $key => $value) {
         $_pathFrom = toGBK($dirFrom.'/'.$value);
         $_pathTo = toGBK($dirTo.'/'.$value);
-        rename($_pathFrom, $_pathTo);
+        $fn($_pathFrom, $_pathTo);
       }
     } else {
       // 重命名
       if (count($names) === 1) {
         $_pathFrom = toGBK($dirFrom.'/'.$names[0]);
         $_pathTo = toGBK($dirTo.'/'.$newName);
-        rename($_pathFrom, $_pathTo);
+        $fn($_pathFrom, $_pathTo);
       } else {
         $pureName = getFileName($newName);
         $pureType = getFileType($newName);
@@ -108,7 +109,7 @@ switch ($_REQUEST['a']) {
           $fileType = $isUpdateExtension ? $pureType : getFileType($value);
           $_pathFrom = toGBK($dirFrom.'/'.$value);
           $_pathTo = toGBK($dirTo.'/'.$pureName.'('.($key + 1).')'.($fileType ? '.'.$fileType : ''));
-          rename($_pathFrom, $_pathTo);
+          $fn($_pathFrom, $_pathTo);
         }
       }
     }
@@ -118,7 +119,7 @@ switch ($_REQUEST['a']) {
   case 'fileDelete':
     $names = json_decode($_REQUEST['names'], true);
 
-    if (strpos($_path, './test') !== 0) err(2, '只能删除 ./test 目录下的文件');
+    // if (strpos($_path, './test') !== 0) err(2, '只能删除 ./test 目录下的文件');
 
     foreach ($names as $key => $value) {
       $value = trim($value);
@@ -128,5 +129,17 @@ switch ($_REQUEST['a']) {
     }
 
     err(0, '删除成功');
+    break;
+  case 'upload':
+    $pathArr = explode('/', $_REQUEST['path']);
+    $fileName = array_pop($pathArr);
+    $path = join($pathArr, '/');
+
+    mkPath(toGBK($path));
+    move_uploaded_file($_FILES['file']['tmp_name'], toGBK($_REQUEST['path'])) or die(whyFsOperateError());
+    err(0, '上传成功');
+    break;
+  case 'getIni':
+    res(['uploadMaxFilesize' => ini_get('upload_max_filesize')]);
     break;
 }
