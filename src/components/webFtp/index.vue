@@ -243,6 +243,9 @@ export default {
       dir.new.dirFrom = me.curPath
       dir.new.names = me.getSelectedFiles()
     },
+    getSelectedLi() {
+      return [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir.cur li[draggable=true]'))
+    },
     getSelectedFiles() {
       return [].slice.call(document.querySelectorAll('.web-ftp .dir-list .dir.cur li[draggable=true] .file-name')).map(n => n.innerText.trim())
     },
@@ -339,6 +342,7 @@ export default {
       const vm = me.$root
       const r = vm.router
       const dir = me.dir
+      const curPath = me.curPath
       let data = {}
 
       switch (action) {
@@ -366,7 +370,7 @@ export default {
           break
         case '新建文件夹':
         case '新建文件':
-          if (me.curPath) {
+          if (curPath) {
             e.stopPropagation()
             dir.new.isShow = true
             dir.new.isRename = false
@@ -408,21 +412,21 @@ export default {
               a: 'rename',
               isFileMove: true,
               dirFrom: dir.new.dirFrom,
-              dirTo: me.curPath,
+              dirTo: curPath,
               names: dir.new.names,
             }
 
-            if (dir.map[me.curPath].msg) {
-              console.log(dir.map[me.curPath].msg)
-              return
+            if (dir.map[curPath].msg) {
+              console.log(dir.map[curPath].msg)
+              break
             }
           } else {
             if (dir.new.isRename) {
               // 重命名
               data = {
                 a: 'rename',
-                dirFrom: me.curPath,
-                dirTo: me.curPath,
+                dirFrom: curPath,
+                dirTo: curPath,
                 newName: dir.new.name,
                 names: JSON.stringify(me.getSelectedFiles()),
                 isUpdateExtension: r.dir.isUpdateExtension || '',
@@ -431,7 +435,7 @@ export default {
               // 新建文件(夹)
               data = {
                 a: 'make' + (dir.new.isDir ? 'Dir' : 'File'),
-                path: me.curPath,
+                path: curPath,
                 name: dir.new.name,
               }
             }
@@ -441,8 +445,8 @@ export default {
             dir.new.isShow = false
             me.$delete(dir.map, dir.new.dirFrom)
             me.$delete(dir.mapSelected, dir.new.dirFrom)
-            me.$delete(dir.map, me.curPath)
-            me.$delete(dir.mapSelected, me.curPath)
+            me.$delete(dir.map, curPath)
+            me.$delete(dir.mapSelected, curPath)
             me.forceOpenDir()
           })
           break
@@ -453,6 +457,7 @@ export default {
           dir.new.isShow = false
           dir.open.isShow = true
           dir.open.path = ''
+          me.fixMenu.isShow = false
           break
         case 'do打开文件夹':
           const path = me.correctPath(me.dir.open.path)
@@ -528,7 +533,7 @@ export default {
         case '删除':
           vm.get('./api/webFtp.php', {
             a: 'fileDelete',
-            path: me.curPath,
+            path: curPath,
             names: JSON.stringify(me.getSelectedFiles())
           }, (data) => {
             me.forceOpenDir()
@@ -556,10 +561,10 @@ export default {
 
             if (e.target.closest('[draggable=true]')) {
               fixMenu.list = [
-                '打开',
-                '复制',
-                '剪切',
-                '删除',
+                // '打开',
+                // '复制',
+                // '剪切',
+                // '删除',
                 '重命名',
                 '下载',
               ]
@@ -572,7 +577,7 @@ export default {
               ]
             }
 
-            fixMenu.list.push('粘贴')
+            // fixMenu.list.push('粘贴')
 
             me.$nextTick(() => {
               const node = me.$refs.fixMenu
@@ -1017,6 +1022,8 @@ export default {
         e.preventDefault()
         me.exec(e, 'do操作文件(夹)')
         dir.new.isFileMove = false
+        dir.new.names = []
+        dir.new.dirFrom = ''
       }
     }
   },

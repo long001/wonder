@@ -1,7 +1,7 @@
 <template>
   <div class="topbar lmr" :style="{paddingTop: $root.topPt}">
     <div class="fl box-logo a-hidden-xs">
-      <a href="javascript:">Codding.cn</a>
+      <a href="javascript:">codding.cn</a>
     </div>
     <div class="fr"
       v-if="$root.urlSearchData.isInApp"
