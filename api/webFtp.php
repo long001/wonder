@@ -15,8 +15,8 @@ $names = array_filter($names, function($v) {
 
 switch ($_REQUEST['a']) {
   case 'openDir':
-    if (!is_dir($_path)) err(2, '当前路径不是文件夹 '.$_path);
-    if (!is_readable($_path)) err(2, '当前路径不可读  '.$_path);
+    if (!is_dir($_path)) err(1, '当前路径不是文件夹 '.$_path);
+    if (!is_readable($_path)) err(1, '当前路径不可读  '.$_path);
 
     $handler = opendir($_path);
     $result = [];

@@ -54,6 +54,15 @@ export default {
           if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
             vm.err(xhr.responseText, o.succ, fail)
           } else {
+            if (xhr.status === 0) {
+              vm.alert('请保持网络畅通')
+            } else if (xhr.status === 404) {
+              vm.alert('404 找不到')
+            } else if (xhr.status >= 500 && xhr.status < 600) {
+              vm.alert('服务器异常')
+            } else {
+
+            }
             fail()
           }
         }

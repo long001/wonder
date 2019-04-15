@@ -327,9 +327,12 @@ export default {
         dir.map[path] = dirs.concat(Array.prototype.concat.apply([], group))
         cb && cb()
       }, (xhr, data) => {
+        console.log(xhr, data)
         vm.$set(dir.map, path, data)
         cb && cb()
       })
+
+      dir.new.isShow = false
     },
     exec(e, action) {
       const me = this
@@ -407,6 +410,11 @@ export default {
               dirFrom: dir.new.dirFrom,
               dirTo: me.curPath,
               names: dir.new.names,
+            }
+
+            if (dir.map[me.curPath].msg) {
+              console.log(dir.map[me.curPath].msg)
+              return
             }
           } else {
             if (dir.new.isRename) {
@@ -493,9 +501,6 @@ export default {
               })
             }
           }
-          break
-        case '操作文件(夹)':
-
           break
         case '全选':
           if (document.activeElement.nodeName.toLowerCase() !== 'input') {
